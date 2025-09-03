@@ -1,22 +1,25 @@
-"use client";
-import { useState, useEffect } from "react";
-import { User, getCurrentUser } from "../lib/auth";
+import { useState } from "react";
+import api from "../utils/api";
+import { LoginResponse } from "../types";
 
-export default function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+export const useAuth = () => {
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    let mounted = true;
-    getCurrentUser().then((u) => {
-      if (!mounted) return;
-      setUser(u);
+  const login = async (email: string, password: string): Promise<LoginResponse> => {
+    setLoading(true);
+    try {
+      const res = await api.post<LoginResponse>("/auth/login", { email, password });
+      const data = res.data as LoginResponse;
+      localStorage.setItem("token", data.token);
+      return data;
+    } finally {
       setLoading(false);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    }
+  };
 
-  return { user, loading };
-}
+  const logout = () => {
+    localStorage.removeItem("token");
+  };
+
+  return { login, logout, loading };
+};
