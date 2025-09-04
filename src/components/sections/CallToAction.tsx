@@ -1,34 +1,23 @@
 import Link from "next/link";
-import Button from "../ui/Button";
 
 export default function CallToAction() {
   return (
-    <section className="py-20 bg-blue-600">
-      <div className="container mx-auto px-4 text-center">
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-          Ready to Transform Your Remote Work Experience?
-        </h2>
-        <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-          Join thousands of teams who have already improved their productivity 
-          and collaboration with RemoteHub.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+    <section className="bg-dark text-white py-20">
+      <div className="max-w-4xl mx-auto text-center px-6">
+        <div className="border-t border-blue-600 pt-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Ready to Elevate Your Remote Collaboration?
+          </h2>
+          <p className="text-xl text-gray-300 mb-8">
+            Join thousands of successful teams transforming their remote work experience with RemoteHub.
+          </p>
+          
           <Link href="/auth/register">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-              Start Free Trial
-            </Button>
-          </Link>
-          <Link href="/contact">
-            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-blue-600">
-              Contact Sales
-            </Button>
+            <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200">
+              Get Started Now
+            </button>
           </Link>
         </div>
-        
-        <p className="text-blue-200 mt-6 text-sm">
-          No credit card required • 14-day free trial • Cancel anytime
-        </p>
       </div>
     </section>
   );
