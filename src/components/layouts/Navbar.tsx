@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated } = useAuthContext();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -52,36 +54,24 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* User Icons - Hidden on mobile */}
+          {/* User Actions - Hidden on mobile */}
           <div className="hidden md:flex items-center space-x-3">
-            {/* Camera Icon */}
-            <button className="w-8 h-8 text-gray-300 hover:text-white transition-colors">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </button>
-            
-            {/* Bell Icon with Notification */}
-            <button className="w-8 h-8 text-gray-300 hover:text-white transition-colors relative">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.5 9.5a6.5 6.5 0 0113 0v1.5a2.5 2.5 0 005 0V9.5a11.5 11.5 0 00-23 0v1.5a2.5 2.5 0 005 0V9.5z" />
-              </svg>
-              <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                2
+            {isAuthenticated ? (
+              // Show profile avatar when authenticated
+              <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                U
               </div>
-            </button>
-            
-            {/* Document Icon */}
-            <button className="w-8 h-8 text-gray-300 hover:text-white transition-colors">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </button>
-            
-            {/* User Avatar */}
-            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-              U
-            </div>
+            ) : (
+              // Default: show Sign In / Sign Up links
+              <>
+                <Link href="/sign-in" className="px-4 py-2 text-sm rounded-lg border border-gray-700 text-gray-200 hover:bg-gray-800 transition-colors">
+                  Sign In
+                </Link>
+                <Link href="/sign-up" className="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Hamburger Menu Button - Mobile Only */}
@@ -151,23 +141,24 @@ export default function Navbar() {
           {/* Mobile User Actions */}
           <div className="pt-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <button className="w-8 h-8 text-gray-300 hover:text-white transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              </button>
-              <button className="w-8 h-8 text-gray-300 hover:text-white transition-colors relative">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.5 9.5a6.5 6.5 0 0113 0v1.5a2.5 2.5 0 005 0V9.5a11.5 11.5 0 00-23 0v1.5a2.5 2.5 0 005 0V9.5z" />
-                </svg>
-                <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                  2
-                </div>
-              </button>
+              {/* Placeholder icons kept for layout symmetry */}
+              <div className="w-8 h-8 text-gray-300" />
+              <div className="w-8 h-8 text-gray-300" />
             </div>
-            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-              U
-            </div>
+            {isAuthenticated ? (
+              <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                U
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link href="/sign-in" className="px-3 py-2 text-sm rounded-lg border border-gray-700 text-gray-200 hover:bg-gray-800 transition-colors" onClick={() => setIsMenuOpen(false)}>
+                  Sign In
+                </Link>
+                <Link href="/sign-up" className="px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors" onClick={() => setIsMenuOpen(false)}>
+                  Sign Up
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
