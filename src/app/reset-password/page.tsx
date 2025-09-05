@@ -9,7 +9,13 @@ export default function ResetPasswordPage() {
   const [sent, setSent] = useState(false);
 
   return (
-    <main className="min-h-screen flex flex-col items-center pt-10">
+    <main className="min-h-screen bg-black flex flex-col items-center pt-10">
+      {/* Top centered image/logo */}
+      <div className="w-24 h-24 rounded-md overflow-hidden mb-0 shadow-lg">
+        {/* Replace src with your desired image */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/signup_logo.png" alt="RemoteHub" className="w-full h-full object-cover bg-black" />
+      </div>
       <AuthTabs />
       <AuthCard
         title={sent ? "Check your email" : "Reset Password"}

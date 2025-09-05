@@ -10,10 +10,10 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <main className="min-h-screen flex flex-col items-center pt-10">
-      <div className="w-24 h-24 rounded-md overflow-hidden mb-4 shadow-lg">
+    <main className="min-h-screen bg-black flex flex-col items-center pt-10">
+      <div className="w-24 h-24 rounded-md overflow-hidden mb-0 shadow-lg">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/globe.svg" alt="RemoteHub" className="w-full h-full object-cover bg-black" />
+        <img src="/signup_logo.png" alt="RemoteHub" className="w-full h-full object-cover bg-black" />
       </div>
       <AuthTabs />
       <AuthCard title="Create Account" subtitle="Join RemoteHub in a few clicks">
