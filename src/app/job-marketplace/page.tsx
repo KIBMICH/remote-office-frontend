@@ -1,6 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, MapPin, Clock, DollarSign, Filter, ChevronDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuthContext } from "@/context/AuthContext";
 
 interface Job {
   id: string;
@@ -91,6 +93,35 @@ export default function JobMarketplace() {
   const [selectedCompanySize, setSelectedCompanySize] = useState("");
   const [selectedTechnologies, setSelectedTechnologies] = useState<string[]>([]);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const { isAuthenticated, loading, user } = useAuthContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    const hasToken = typeof window !== "undefined" && !!localStorage.getItem("token");
+    if (!loading && !(isAuthenticated || hasToken)) {
+      router.replace("/sign-in");
+    }
+  }, [loading, isAuthenticated, router]);
+
+  // Prevent rendering content while determining auth or redirecting
+  const hasToken = typeof window !== "undefined" && !!localStorage.getItem("token");
+  if (!loading && !(isAuthenticated || hasToken)) {
+    return null;
+  }
+
+  // If user has a company id in profile, redirect them to dashboard
+  useEffect(() => {
+    if (loading) return;
+    const companyId =
+      (user as any)?.company?._id ||
+      (user as any)?.company?.$oid ||
+      (user as any)?.companyId ||
+      (user as any)?.company ||
+      null;
+    if (companyId) {
+      router.replace("/dashboard");
+    }
+  }, [loading, user, router]);
 
   const filteredJobs = jobListings.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

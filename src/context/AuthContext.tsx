@@ -2,11 +2,14 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "../hooks/useAuth";
+import api from "@/utils/api";
+import { API_ENDPOINTS } from "@/utils/constants";
 
 interface User {
   id: string;
   email: string;
   name?: string;
+  company?: any;
 }
 
 interface AuthContextType {
@@ -28,13 +31,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Check if user is already logged in
     const token = localStorage.getItem("token");
-    if (token) {
-      // You could verify the token here with your API
-      // For now, we'll just check if it exists
-      setLoading(false);
-    } else {
-      setLoading(false);
-    }
+    const fetchProfile = async () => {
+      try {
+        if (!token) return;
+        const res = await api.get(API_ENDPOINTS.USER.PROFILE);
+        const data = (res as any)?.data;
+        const profile = data?.user ?? data;
+        if (profile) {
+          // Normalize to our User shape
+          const normalized: User = {
+            id: profile._id?.$oid || profile._id || profile.id || "",
+            email: profile.email,
+            name: profile.name,
+            company: profile.company,
+          };
+          setUser(normalized);
+        }
+      } catch (e) {
+        // If profile fetch fails, assume logged out
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
   }, []);
 
   const login = async (email: string, password: string) => {

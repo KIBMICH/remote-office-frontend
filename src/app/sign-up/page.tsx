@@ -5,9 +5,37 @@ import AuthCard from "@/components/auth/AuthCard";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import authService from "@/services/authService";
+import Spinner from "@/components/ui/Spinner";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function SignUpPage() {
+  const router = useRouter();
+  const { success: toastSuccess } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await authService.register({ name, email, password });
+      toastSuccess("Account created! Redirecting to Sign In...");
+      await new Promise((r) => setTimeout(r, 1000));
+      router.push("/sign-in");
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.message || "Registration failed";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-black flex flex-col items-center pt-10">
@@ -17,19 +45,33 @@ export default function SignUpPage() {
       </div>
       <AuthTabs />
       <AuthCard title="Create Account" subtitle="Join RemoteHub in a few clicks">
-        <form className="flex flex-col gap-4">
+        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">👤</span>
-              <Input type="text" placeholder="Jane Doe" className="pl-10 bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500" />
+              <Input
+                type="text"
+                placeholder="Jane Doe"
+                className="pl-10 bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">✉️</span>
-              <Input type="email" placeholder="name@company.com" className="pl-10 bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500" />
+              <Input
+                type="email"
+                placeholder="name@company.com"
+                className="pl-10 bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
           </div>
           <div>
@@ -40,6 +82,9 @@ export default function SignUpPage() {
                 type={showPassword ? "text" : "password"}
                 placeholder="•••••••"
                 className="pl-10 pr-10 bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
               />
               <button
                 type="button"
@@ -51,7 +96,23 @@ export default function SignUpPage() {
               </button>
             </div>
           </div>
-          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">Create Account</Button>
+          {error && (
+            <p className="text-sm text-red-400" role="alert">{error}</p>
+          )}
+          <Button
+            type="submit"
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="inline-flex items-center gap-2">
+                <Spinner size={16} />
+                <span>Creating Account...</span>
+              </span>
+            ) : (
+              "Create Account"
+            )}
+          </Button>
         </form>
 
         <p className="text-center mt-6 text-sm text-gray-400">

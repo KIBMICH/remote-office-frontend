@@ -1,10 +1,10 @@
 // API Configuration
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: "/auth/login",
-    REGISTER: "/auth/register",
-    LOGOUT: "/auth/logout",
-    VERIFY: "/auth/verify",
+    LOGIN: "api/auth/login",
+    REGISTER: "api/auth/register",
+    LOGOUT: "api/auth/logout",
+    VERIFY: "api/auth/verify",
   },
   USER: {
     PROFILE: "/user/profile",
