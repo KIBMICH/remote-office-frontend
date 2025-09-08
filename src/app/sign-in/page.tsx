@@ -5,9 +5,61 @@ import AuthCard from "@/components/auth/AuthCard";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import authService from "@/services/authService";
+import Spinner from "@/components/ui/Spinner";
+import { useToast } from "@/components/ui/ToastProvider";
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function SignInPage() {
+  const router = useRouter();
+  const { success: toastSuccess } = useToast();
+  const { setUser } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await authService.login({ email, password });
+      if (res?.token) {
+        localStorage.setItem("token", res.token);
+      }
+      // Persist user in context when available
+      if (res?.user) {
+        try {
+          setUser(res.user);
+        } catch {}
+      }
+      toastSuccess("Login successful! Redirecting...");
+      await new Promise((r) => setTimeout(r, 1000));
+      // Detect company ObjectID from common shapes (including Mongo Extended JSON)
+      const companyId =
+        res?.user?.company?._id ||
+        res?.user?.companyId ||
+        res?.companyId ||
+        res?.company?._id ||
+        res?.user?.company?.$oid ||
+        res?.company?.$oid ||
+        res?.user?.company ||
+        null;
+      if (companyId) {
+        router.push("/dashboard");
+      } else {
+        router.push("/job-marketplace");
+      }
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.message || "Login failed";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-black flex flex-col items-center pt-10">
@@ -20,7 +72,7 @@ export default function SignInPage() {
 
       <AuthTabs />
       <AuthCard title="Welcome Back" subtitle="Sign in to your RemoteHub account">
-        <form className="flex flex-col gap-5">
+        <form className="flex flex-col gap-5" onSubmit={onSubmit}>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
             <div className="relative">
@@ -34,6 +86,9 @@ export default function SignInPage() {
                 type="email"
                 placeholder="name@company.com"
                 className="pl-10 h-10 bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
           </div>
@@ -55,6 +110,9 @@ export default function SignInPage() {
                 type={showPassword ? "text" : "password"}
                 placeholder="•••••••"
                 className="pl-10 pr-10 h-10 bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
               />
               <button
                 type="button"
@@ -79,7 +137,23 @@ export default function SignInPage() {
               </button>
             </div>
           </div>
-          <Button type="submit" className="w-full h-10 rounded-md bg-blue-600 hover:bg-blue-700 font-semibold">Sign In</Button>
+          {error && (
+            <p className="text-sm text-red-400" role="alert">{error}</p>
+          )}
+          <Button
+            type="submit"
+            className="w-full h-10 rounded-md bg-blue-600 hover:bg-blue-700 font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="inline-flex items-center gap-2">
+                <Spinner size={16} />
+                <span>Signing In...</span>
+              </span>
+            ) : (
+              "Sign In"
+            )}
+          </Button>
         </form>
 
         <div className="my-5 flex items-center gap-4">

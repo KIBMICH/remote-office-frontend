@@ -1,6 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, MapPin, Clock, DollarSign, Filter, ChevronDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuthContext } from "@/context/AuthContext";
 
 interface Job {
   id: string;
@@ -90,6 +92,36 @@ export default function JobMarketplace() {
   const [selectedSalary, setSelectedSalary] = useState("");
   const [selectedCompanySize, setSelectedCompanySize] = useState("");
   const [selectedTechnologies, setSelectedTechnologies] = useState<string[]>([]);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const { isAuthenticated, loading, user } = useAuthContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    const hasToken = typeof window !== "undefined" && !!localStorage.getItem("token");
+    if (!loading && !(isAuthenticated || hasToken)) {
+      router.replace("/sign-in");
+    }
+  }, [loading, isAuthenticated, router]);
+
+  // Prevent rendering content while determining auth or redirecting
+  const hasToken = typeof window !== "undefined" && !!localStorage.getItem("token");
+  if (!loading && !(isAuthenticated || hasToken)) {
+    return null;
+  }
+
+  // If user has a company id in profile, redirect them to dashboard
+  useEffect(() => {
+    if (loading) return;
+    const companyId =
+      (user as any)?.company?._id ||
+      (user as any)?.company?.$oid ||
+      (user as any)?.companyId ||
+      (user as any)?.company ||
+      null;
+    if (companyId) {
+      router.replace("/dashboard");
+    }
+  }, [loading, user, router]);
 
   const filteredJobs = jobListings.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -100,6 +132,124 @@ export default function JobMarketplace() {
     
     return matchesSearch && matchesJobType;
   });
+
+  // Reusable Filters card
+  const FiltersCard = () => (
+    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+      <h3 className="text-sm font-semibold mb-4 flex items-center text-white">
+        <Filter className="w-4 h-4 mr-2" />
+        Filters
+      </h3>
+
+      {/* Job Type */}
+      <div className="mb-4">
+        <h4 className="font-medium mb-2 flex items-center text-white text-sm">
+          <Clock className="w-3 h-3 mr-2" />
+          Job Type
+        </h4>
+        <div className="space-y-1">
+          {["Full-time", "Part-time", "Contract", "Internship"].map((type) => (
+            <label key={type} className="flex items-center text-xs">
+              <input
+                type="checkbox"
+                className="mr-2 w-3 h-3 rounded bg-gray-800 border-gray-700 text-blue-600 focus:ring-blue-500"
+                checked={selectedJobType === type}
+                onChange={(e) => setSelectedJobType(e.target.checked ? type : "")}
+              />
+              <span className="text-gray-300">{type}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Experience Level */}
+      <div className="mb-4">
+        <h4 className="font-medium mb-2 text-white text-sm">Experience Level</h4>
+        <div className="space-y-1">
+          {["Entry level", "Mid level", "Senior level", "Executive"].map((level) => (
+            <label key={level} className="flex items-center text-xs">
+              <input
+                type="checkbox"
+                className="mr-2 w-3 h-3 rounded bg-gray-800 border-gray-700 text-blue-600 focus:ring-blue-500"
+                checked={selectedExperience === level}
+                onChange={(e) => setSelectedExperience(e.target.checked ? level : "")}
+              />
+              <span className="text-gray-300">{level}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Salary Range */}
+      <div className="mb-4">
+        <h4 className="font-medium mb-2 flex items-center text-white text-sm">
+          <DollarSign className="w-3 h-3 mr-2" />
+          Salary Range
+        </h4>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Min $</span>
+            <span className="text-xs text-gray-400">Max $</span>
+          </div>
+          <div className="flex space-x-2">
+            <input type="number" placeholder="0" className="w-full px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded" />
+            <input type="number" placeholder="200k" className="w-full px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded" />
+          </div>
+        </div>
+      </div>
+
+      {/* Company Size */}
+      <div className="mb-4">
+        <h4 className="font-medium mb-2 text-white text-sm">Company Size</h4>
+        <div className="space-y-1">
+          {["1-10 employees", "11-50 employees", "51-200 employees", "200+ employees"].map((size) => (
+            <label key={size} className="flex items-center text-xs">
+              <input
+                type="checkbox"
+                className="mr-2 w-3 h-3 rounded bg-gray-800 border-gray-700 text-blue-600 focus:ring-blue-500"
+                checked={selectedCompanySize === size}
+                onChange={(e) => setSelectedCompanySize(e.target.checked ? size : "")}
+              />
+              <span className="text-gray-300">{size}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Technologies */}
+      <div>
+        <h4 className="font-medium mb-2 text-white text-sm">Technologies</h4>
+        <div className="space-y-1">
+          {["React", "Python", "AI", "Node.js", "TypeScript", "AWS"].map((tech) => (
+            <label key={tech} className="flex items-center text-xs">
+              <input
+                type="checkbox"
+                className="mr-2 w-3 h-3 rounded bg-gray-800 border-gray-700 text-blue-600 focus:ring-blue-500"
+                checked={selectedTechnologies.includes(tech)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedTechnologies([...selectedTechnologies, tech]);
+                  } else {
+                    setSelectedTechnologies(selectedTechnologies.filter(t => t !== tech));
+                  }
+                }}
+              />
+              <span className="text-gray-300">{tech}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        <button className="w-full bg-blue-600 hover:bg-blue-700 py-2 px-3 rounded text-xs font-medium">
+          Apply Filters
+        </button>
+        <button className="w-full bg-gray-800 hover:bg-gray-700 py-2 px-3 rounded text-xs">
+          Clear All
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -121,127 +271,36 @@ export default function JobMarketplace() {
 
       <div className="flex">
         {/* Filters Sidebar */}
-        <div className="w-64 bg-gray-900 border-r border-gray-800 min-h-screen p-4">
+        <div className="hidden md:block w-64 bg-gray-900 border-r border-gray-800 min-h-screen p-4">
           <div className="space-y-4">
-            <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-              <h3 className="text-sm font-semibold mb-4 flex items-center text-white">
-                <Filter className="w-4 h-4 mr-2" />
-                Filters
-              </h3>
-
-              {/* Job Type */}
-              <div className="mb-4">
-                <h4 className="font-medium mb-2 flex items-center text-white text-sm">
-                  <Clock className="w-3 h-3 mr-2" />
-                  Job Type
-                </h4>
-                <div className="space-y-1">
-                  {["Full-time", "Part-time", "Contract", "Internship"].map((type) => (
-                    <label key={type} className="flex items-center text-xs">
-                      <input
-                        type="checkbox"
-                        className="mr-2 w-3 h-3 rounded bg-gray-800 border-gray-700 text-blue-600 focus:ring-blue-500"
-                        checked={selectedJobType === type}
-                        onChange={(e) => setSelectedJobType(e.target.checked ? type : "")}
-                      />
-                      <span className="text-gray-300">{type}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Experience Level */}
-              <div className="mb-4">
-                <h4 className="font-medium mb-2 text-white text-sm">Experience Level</h4>
-                <div className="space-y-1">
-                  {["Entry level", "Mid level", "Senior level", "Executive"].map((level) => (
-                    <label key={level} className="flex items-center text-xs">
-                      <input
-                        type="checkbox"
-                        className="mr-2 w-3 h-3 rounded bg-gray-800 border-gray-700 text-blue-600 focus:ring-blue-500"
-                        checked={selectedExperience === level}
-                        onChange={(e) => setSelectedExperience(e.target.checked ? level : "")}
-                      />
-                      <span className="text-gray-300">{level}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Salary Range */}
-              <div className="mb-4">
-                <h4 className="font-medium mb-2 flex items-center text-white text-sm">
-                  <DollarSign className="w-3 h-3 mr-2" />
-                  Salary Range
-                </h4>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-400">Min $</span>
-                    <span className="text-xs text-gray-400">Max $</span>
-                  </div>
-                  <div className="flex space-x-2">
-                    <input type="number" placeholder="0" className="w-full px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded" />
-                    <input type="number" placeholder="200k" className="w-full px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Company Size */}
-              <div className="mb-4">
-                <h4 className="font-medium mb-2 text-white text-sm">Company Size</h4>
-                <div className="space-y-1">
-                  {["1-10 employees", "11-50 employees", "51-200 employees", "200+ employees"].map((size) => (
-                    <label key={size} className="flex items-center text-xs">
-                      <input
-                        type="checkbox"
-                        className="mr-2 w-3 h-3 rounded bg-gray-800 border-gray-700 text-blue-600 focus:ring-blue-500"
-                        checked={selectedCompanySize === size}
-                        onChange={(e) => setSelectedCompanySize(e.target.checked ? size : "")}
-                      />
-                      <span className="text-gray-300">{size}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Technologies */}
-              <div>
-                <h4 className="font-medium mb-2 text-white text-sm">Technologies</h4>
-                <div className="space-y-1">
-                  {["React", "Python", "AI", "Node.js", "TypeScript", "AWS"].map((tech) => (
-                    <label key={tech} className="flex items-center text-xs">
-                      <input
-                        type="checkbox"
-                        className="mr-2 w-3 h-3 rounded bg-gray-800 border-gray-700 text-blue-600 focus:ring-blue-500"
-                        checked={selectedTechnologies.includes(tech)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedTechnologies([...selectedTechnologies, tech]);
-                          } else {
-                            setSelectedTechnologies(selectedTechnologies.filter(t => t !== tech));
-                          }
-                        }}
-                      />
-                      <span className="text-gray-300">{tech}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-4 space-y-2">
-                <button className="w-full bg-blue-600 hover:bg-blue-700 py-2 px-3 rounded text-xs font-medium">
-                  Apply Filters
-                </button>
-                <button className="w-full bg-gray-800 hover:bg-gray-700 py-2 px-3 rounded text-xs">
-                  Clear All
-                </button>
-              </div>
-            </div>
+            <FiltersCard />
           </div>
         </div>
 
         {/* Job Listings */}
         <div className="flex-1 p-6">
+          {/* Mobile Filters Toggle */}
+          <div className="md:hidden mb-4">
+            <button
+              onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
+              className="w-full flex items-center justify-between bg-gray-900 border border-gray-800 rounded px-3 py-2"
+            
+            >
+              <span className="flex items-center text-sm font-medium">
+                <Filter className="w-4 h-4 mr-2 text-blue-400" />
+                Filters
+              </span>
+              <ChevronDown
+                className={`${isMobileFilterOpen ? "rotate-180" : "rotate-0"} transition-transform duration-200 w-4 h-4 text-gray-400`}
+              />
+            </button>
+            {isMobileFilterOpen && (
+              <div className="mt-3">
+                <FiltersCard />
+              </div>
+            )}
+          </div>
+
           {/* Page Title */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold mb-2">Remote Job Opportunities</h1>

@@ -1,8 +1,7 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
-import { API_ENDPOINTS } from "./constants";
+import axios from "axios";
 
 // Create axios instance
-const api: AxiosInstance = axios.create({
+const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "/api",
   headers: {
     "Content-Type": "application/json",
@@ -12,28 +11,28 @@ const api: AxiosInstance = axios.create({
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
-  (config) => {
+  (config: any) => {
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
+  (error: any) => {
     return Promise.reject(error);
   }
 );
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response: AxiosResponse) => {
+  (response: any) => {
     return response;
   },
-  (error: AxiosError) => {
+  (error: any) => {
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      window.location.href = "/sign-in";
     }
     return Promise.reject(error);
   }
@@ -49,4 +48,3 @@ export const apiClient = {
 };
 
 export default api;
-export { API_ENDPOINTS };
