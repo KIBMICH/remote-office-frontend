@@ -57,14 +57,20 @@ export default function SignInPage() {
       // Detect company ObjectID from common shapes (including Mongo Extended JSON)
       type LoginRes = { companyId?: string; company?: { _id?: string; $oid?: string } | string };
       const r = res as unknown as LoginRes;
+      const extractId = (val: unknown): string | null => {
+        if (!val) return null;
+        if (typeof val === 'string') return val;
+        if (typeof val === 'object') {
+          const v = val as { _id?: string; $oid?: string };
+          return v._id ?? v.$oid ?? null;
+        }
+        return null;
+      };
       const companyId =
-        (typeof rawUser?.company === 'object' ? rawUser.company._id : null) ||
-        rawUser?.companyId ||
-        r?.companyId ||
-        (typeof r?.company === 'object' ? r.company._id : null) ||
-        (typeof rawUser?.company === 'object' ? rawUser.company.$oid : null) ||
-        (typeof r?.company === 'object' ? r.company.$oid : null) ||
-        (typeof rawUser?.company === 'string' ? rawUser.company : null) ||
+        extractId(rawUser?.company) ??
+        rawUser?.companyId ??
+        r?.companyId ??
+        extractId(r?.company) ??
         null;
       if (companyId) {
         router.push("/dashboard");
