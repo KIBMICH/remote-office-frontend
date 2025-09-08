@@ -9,7 +9,6 @@ type SpinnerProps = {
 export default function Spinner({ size = 18, className = "" }: SpinnerProps) {
   const stroke = 2;
   const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
 
   return (
     <svg

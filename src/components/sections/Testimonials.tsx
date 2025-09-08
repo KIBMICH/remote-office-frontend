@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 export default function Testimonials() {
   const testimonials = [
     {
@@ -24,16 +22,6 @@ export default function Testimonials() {
     }
   ];
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % testimonials.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-  };
-
   return (
     <section className="bg-dark text-white py-20">
       <div className="max-w-7xl mx-auto px-6">
@@ -41,36 +29,14 @@ export default function Testimonials() {
           What Our Client Say
         </h2>
         
-        {/* Testimonial Cards Container */}
+        {/* Testimonial Cards Grid */}
         <div className="relative">
-          {/* Navigation Arrows */}
-          <button
-            onClick={prevSlide}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 text-green-500 hover:text-green-400 p-2 transition-colors duration-200"
-            aria-label="Previous testimonial"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          
-          <button
-            onClick={nextSlide}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 text-green-500 hover:text-green-400 p-2 transition-colors duration-200"
-            aria-label="Next testimonial"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-
-          {/* Testimonial Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
               <div key={index} className="bg-lightGray p-6 rounded-xl border border-gray-700/30 shadow-lg">
                 {/* Quote */}
                 <blockquote className="text-gray-200 italic mb-6 text-base leading-relaxed">
-                  "{testimonial.quote}"
+                  &quot;{testimonial.quote}&quot;
                 </blockquote>
                 
                 {/* Author Info with Avatar */}

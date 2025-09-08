@@ -31,30 +31,52 @@ export default function SignInPage() {
         localStorage.setItem("token", res.token);
       }
       // Persist user in context when available
-      if (res?.user) {
+      // Normalize user before storing in context (avoid TS structural mismatch)
+      type RawUser = { 
+        _id?: { $oid?: string } | string; 
+        id?: string; 
+        email?: string; 
+        name?: string; 
+        company?: { _id?: string; $oid?: string } | string;
+        companyId?: string;
+      };
+      const rawUser = (res as unknown as { user?: RawUser })?.user;
+      if (rawUser) {
+        const normalized = {
+          id: (typeof rawUser._id === 'object' ? rawUser._id?.$oid : rawUser._id) ?? rawUser.id ?? "",
+          email: rawUser.email ?? "",
+          name: rawUser.name,
+          company: rawUser.company,
+        };
         try {
-          setUser(res.user);
+          setUser(normalized);
         } catch {}
       }
       toastSuccess("Login successful! Redirecting...");
       await new Promise((r) => setTimeout(r, 1000));
       // Detect company ObjectID from common shapes (including Mongo Extended JSON)
+      type LoginRes = { companyId?: string; company?: { _id?: string; $oid?: string } | string };
+      const r = res as unknown as LoginRes;
       const companyId =
-        res?.user?.company?._id ||
-        res?.user?.companyId ||
-        res?.companyId ||
-        res?.company?._id ||
-        res?.user?.company?.$oid ||
-        res?.company?.$oid ||
-        res?.user?.company ||
+        (typeof rawUser?.company === 'object' ? rawUser.company._id : null) ||
+        rawUser?.companyId ||
+        r?.companyId ||
+        (typeof r?.company === 'object' ? r.company._id : null) ||
+        (typeof rawUser?.company === 'object' ? rawUser.company.$oid : null) ||
+        (typeof r?.company === 'object' ? r.company.$oid : null) ||
+        (typeof rawUser?.company === 'string' ? rawUser.company : null) ||
         null;
       if (companyId) {
         router.push("/dashboard");
       } else {
         router.push("/job-marketplace");
       }
-    } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || "Login failed";
+    } catch (err: unknown) {
+      let message = "Login failed";
+      if (typeof err === "object" && err !== null) {
+        const maybeAny = err as { response?: { data?: { message?: string } }; message?: string };
+        message = maybeAny.response?.data?.message || maybeAny.message || message;
+      }
       setError(message);
     } finally {
       setLoading(false);
@@ -175,7 +197,7 @@ export default function SignInPage() {
         </Button>
 
         <p className="text-center mt-6 text-sm text-gray-400">
-          Don't have an account? {" "}
+          Don&apos;t have an account? {" "}
           <Link href="/sign-up" className="text-blue-400 hover:underline">Sign Up</Link>
         </p>
       </AuthCard>

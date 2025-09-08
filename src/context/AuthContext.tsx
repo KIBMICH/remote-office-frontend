@@ -9,14 +9,14 @@ interface User {
   id: string;
   email: string;
   name?: string;
-  company?: any;
+  company?: unknown;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<any>;
+  login: (email: string, password: string) => Promise<unknown>;
   logout: () => void;
   setUser: (user: User | null) => void;
 }
@@ -35,19 +35,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         if (!token) return;
         const res = await api.get(API_ENDPOINTS.USER.PROFILE);
-        const data = (res as any)?.data;
-        const profile = data?.user ?? data;
+        type RawId = string | { $oid?: string } | undefined;
+        type RawProfile = { _id?: RawId; id?: string; email: string; name?: string; company?: unknown };
+        type ApiProfile = { user?: RawProfile } | RawProfile;
+        const data = (res as { data?: ApiProfile }).data;
+        const profile: RawProfile | undefined = (data && 'user' in data ? data.user : data) as RawProfile | undefined;
         if (profile) {
           // Normalize to our User shape
           const normalized: User = {
-            id: profile._id?.$oid || profile._id || profile.id || "",
+            id: (typeof profile._id === 'object' ? profile._id?.$oid : profile._id) || profile.id || "",
             email: profile.email,
             name: profile.name,
             company: profile.company,
           };
           setUser(normalized);
         }
-      } catch (e) {
+      } catch {
         // If profile fetch fails, assume logged out
         setUser(null);
       } finally {

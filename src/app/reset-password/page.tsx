@@ -40,7 +40,7 @@ export default function ResetPasswordPage() {
           </form>
         ) : (
           <div className="text-center text-gray-300">
-            If you don't see the email, check your spam folder.
+            If you don&apos;t see the email, check your spam folder.
           </div>
         )}
       </AuthCard>

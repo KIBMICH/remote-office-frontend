@@ -29,8 +29,12 @@ export default function SignUpPage() {
       toastSuccess("Account created! Redirecting to Sign In...");
       await new Promise((r) => setTimeout(r, 1000));
       router.push("/sign-in");
-    } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || "Registration failed";
+    } catch (err: unknown) {
+      let message = "Registration failed";
+      if (typeof err === "object" && err !== null) {
+        const maybeAny = err as { response?: { data?: { message?: string } }; message?: string };
+        message = maybeAny.response?.data?.message || maybeAny.message || message;
+      }
       setError(message);
     } finally {
       setLoading(false);

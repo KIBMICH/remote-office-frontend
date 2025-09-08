@@ -103,13 +103,6 @@ function FolderIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function ChartIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <path d="M4 19V5M10 19V9M16 19V3M22 21H2" />
-    </svg>
-  );
-}
 function ChatIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>

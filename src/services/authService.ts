@@ -14,7 +14,7 @@ export type LoginPayload = {
 
 export type LoginResponse = {
   token: string;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 export const authService = {
