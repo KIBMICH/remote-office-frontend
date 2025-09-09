@@ -26,7 +26,7 @@ export default function Navbar() {
             <div className="bg-blue-600 w-8 h-8 rounded flex items-center justify-center">
               <span className="text-white text-sm font-semibold">Link</span>
             </div>
-            <span className="text-xl font-bold text-white">RemoteHub</span>
+            <span className="text-xl font-bold text-white">Remortify</span>
           </div>
           
           {/* Desktop Navigation Links */}
