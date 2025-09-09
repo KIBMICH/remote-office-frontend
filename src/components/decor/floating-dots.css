@@ -1,0 +1,36 @@
+/* Floating dots animations + reduced motion support */
+
+/* Ensure the scale custom property is animatable */
+@property --s {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
+@keyframes dot-float {
+  0% { transform: translate3d(0, 0, 0) scale(var(--s)); }
+  25% { transform: translate3d(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5), 0) scale(var(--s)); }
+  50% { transform: translate3d(var(--dx), 0, 0) scale(var(--s)); }
+  75% { transform: translate3d(calc(var(--dx) * 0.5), calc(var(--dy) * -0.5), 0) scale(var(--s)); }
+  100% { transform: translate3d(0, 0, 0) scale(var(--s)); }
+}
+
+@keyframes dot-glow {
+  0% { opacity: 1; box-shadow: 0 0 8px rgba(255,255,255,0.16), 0 0 16px rgba(139,92,246,0.06); }
+  100% { opacity: 1.08; box-shadow: 0 0 12px rgba(255,255,255,0.26), 0 0 22px rgba(139,92,246,0.10); }
+}
+
+@keyframes dot-pulse {
+  0% { --s: 0.96; }
+  100% { --s: 1.06; }
+}
+
+/* Reduced motion: keep dots visible but static */
+@media (prefers-reduced-motion: reduce) {
+  .fdots span {
+    animation: none !important;
+    transform: none !important;
+    box-shadow: 0 0 6px rgba(255,255,255,0.12);
+    opacity: 0.22;
+  }
+}
