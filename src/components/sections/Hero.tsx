@@ -1,15 +1,12 @@
 import Link from "next/link";
+import FloatingDots from "@/components/decor/FloatingDots";
+import "@/components/decor/floating-dots.css";
 
 export default function Hero() {
   return (
-    <section className="text-center py-20 bg-gray-900 text-white relative pt-32">
-      {/* Background grid pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)`,
-          backgroundSize: '20px 20px'
-        }}></div>
-      </div>
+    <section className="text-center py-20 bg-gray-900 text-white relative pt-32 overflow-hidden">
+      {/* Subtle floating dots overlay (transparent background) */}
+      <FloatingDots />
       
       <div className="relative z-10 max-w-4xl mx-auto px-6">
         <h3 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
@@ -35,6 +32,7 @@ export default function Hero() {
           </Link>
         </div>
       </div>
+      {/* Keyframes and reduced motion moved to CSS in components/decor/floating-dots.css */}
     </section>
   );
 }
