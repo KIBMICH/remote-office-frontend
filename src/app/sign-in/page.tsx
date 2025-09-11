@@ -11,6 +11,7 @@ import Spinner from "@/components/ui/Spinner";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useAuthContext } from "@/context/AuthContext";
 
+
 export default function SignInPage() {
   const router = useRouter();
   const { success: toastSuccess } = useToast();
@@ -21,6 +22,26 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Initiate Google OAuth via backend
+  const handleGoogleSignIn = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    try {
+    
+      const callback = `${window.location.origin}/auth/callback`;
+      const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/google?redirectUri=${encodeURIComponent(callback)}`;
+      
+      window.location.href = backendUrl;
+      
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+      setError("Failed to initiate Google sign-in. Please try again.");
+    }
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -30,8 +51,7 @@ export default function SignInPage() {
       if (res?.token) {
         localStorage.setItem("token", res.token);
       }
-      // Persist user in context when available
-      // Normalize user before storing in context (avoid TS structural mismatch)
+  
       type RawUser = { 
         _id?: { $oid?: string } | string; 
         id?: string; 
@@ -54,7 +74,6 @@ export default function SignInPage() {
       }
       toastSuccess("Login successful! Redirecting...");
       await new Promise((r) => setTimeout(r, 1000));
-      // Detect company ObjectID from common shapes (including Mongo Extended JSON)
       type LoginRes = { companyId?: string; company?: { _id?: string; $oid?: string } | string };
       const r = res as unknown as LoginRes;
       const extractId = (val: unknown): string | null => {
@@ -112,7 +131,7 @@ export default function SignInPage() {
               </span>
               <Input
                 type="email"
-                placeholder="name@company.com"
+                placeholder="Enter Email"
                 className="pl-10 h-10 bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -179,7 +198,7 @@ export default function SignInPage() {
                 <span>Signing In...</span>
               </span>
             ) : (
-              "Sign In"
+              "Log In"
             )}
           </Button>
         </form>
@@ -190,7 +209,12 @@ export default function SignInPage() {
           <div className="h-px bg-gray-700/80 flex-1" />
         </div>
 
-        <Button variant="secondary" className="relative w-full h-10 !bg-black text-white !border !border-gray-900 hover:!bg-black/90 rounded-md font-medium">
+        <Button 
+          type="button"
+          onClick={handleGoogleSignIn}
+          variant="secondary" 
+          className="relative w-full h-10 !bg-black text-white !border !border-gray-900 hover:!bg-black/90 rounded-md font-medium"
+        >
           <span className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center">
             <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
               <path fill="#EA4335" d="M12 10.2v3.6h5.1c-.22 1.16-1.82 3.4-5.1 3.4-3.08 0-5.6-2.54-5.6-5.7s2.52-5.7 5.6-5.7c1.76 0 2.94.74 3.61 1.38l2.46-2.37C16.84 3.2 14.64 2.3 12 2.3 6.92 2.3 2.8 6.42 2.8 11.5S6.92 20.7 12 20.7c6.04 0 9.2-4.24 9.2-8.13 0-.55-.06-.97-.14-1.37H12z"/>
