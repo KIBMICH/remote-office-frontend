@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/utils/api";
 import { API_ENDPOINTS } from "@/utils/constants";
 import { useAuthContext } from "@/context/AuthContext";
 import Spinner from "@/components/ui/Spinner";
 
-export default function AuthCallbackPage() {
+function AuthCallbackCore() {
   const router = useRouter();
   const params = useSearchParams();
   const { setUser } = useAuthContext();
@@ -91,7 +91,6 @@ export default function AuthCallbackPage() {
         // Fetch profile to populate context (with fallbacks to handle differing backend routes)
         type RawId = string | { $oid?: string } | undefined;
         type RawProfile = { _id?: RawId; id?: string; email: string; name?: string; company?: unknown };
-        type ApiProfile = { user?: RawProfile } | RawProfile;
 
         const tryEndpoints = async (): Promise<RawProfile | undefined> => {
           const endpoints = [
@@ -104,11 +103,18 @@ export default function AuthCallbackPage() {
           for (const ep of endpoints) {
             try {
               const resp = await api.get(ep);
-              const d = (resp as { data?: ApiProfile }).data;
-              const prof = (d && (d as any).user ? (d as any).user : d) as RawProfile | undefined;
+              const d = resp.data;
+              let prof: RawProfile | undefined;
+              if (d && typeof d === 'object' && 'user' in d) {
+                const maybe = d as { user?: RawProfile };
+                prof = maybe.user;
+              } else {
+                prof = d as RawProfile | undefined;
+              }
               if (prof?.email) return prof;
             } catch (e: unknown) {
-              const status = (e as any)?.response?.status;
+              type AxiosErrorLike = { response?: { status?: number } };
+              const status = (e as AxiosErrorLike)?.response?.status;
               // Try next endpoint on 404, break on 401/403 or other fatal errors
               if (status && status !== 404) break;
             }
@@ -166,5 +172,20 @@ export default function AuthCallbackPage() {
         <span>{error ? error : "Finalizing Google sign-in..."}</span>
       </div>
     </main>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="flex items-center gap-3">
+          <Spinner size={18} />
+          <span>Preparing callback...</span>
+        </div>
+      </main>
+    }>
+      <AuthCallbackCore />
+    </Suspense>
   );
 }

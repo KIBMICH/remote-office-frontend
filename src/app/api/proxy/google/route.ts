@@ -40,7 +40,7 @@ export async function GET(req: Request) {
       // Not JSON, return as text
       return NextResponse.json({ message: "Unexpected response from auth provider" }, { status: res.status });
     }
-  } catch (e) {
+  } catch {
     return NextResponse.json({ message: "Failed to reach auth service" }, { status: 500 });
   }
 }
