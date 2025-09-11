@@ -5,22 +5,23 @@ export const API_ENDPOINTS = {
     REGISTER: "api/auth/register",
     LOGOUT: "api/auth/logout",
     VERIFY: "api/auth/verify",
+    GOOGLE: "api/auth/google",
   },
   USER: {
-    PROFILE: "/user/profile",
-    UPDATE: "/user/update",
+    PROFILE: "api/user/profile",
+    UPDATE: "api/user/update",
   },
   TEAM: {
-    LIST: "/teams",
-    CREATE: "/teams",
-    UPDATE: "/teams/:id",
-    DELETE: "/teams/:id",
+    LIST: "api/teams",
+    CREATE: "api/teams",
+    UPDATE: "api/teams/:id",
+    DELETE: "api/teams/:id",
   },
   PROJECT: {
-    LIST: "/projects",
-    CREATE: "/projects",
-    UPDATE: "/projects/:id",
-    DELETE: "/projects/:id",
+    LIST: "api/projects",
+    CREATE: "api/projects",
+    UPDATE: "api/projects/:id",
+    DELETE: "api/projects/:id",
   },
 } as const;
 
