@@ -198,7 +198,7 @@ export default function SignInPage() {
                 <span>Signing In...</span>
               </span>
             ) : (
-              "Sign In"
+              "Log In"
             )}
           </Button>
         </form>
