@@ -14,19 +14,26 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: SettingsIcon },
 ];
 
-type SidebarProps = { showHeader?: boolean };
+type SidebarProps = { showHeader?: boolean; onClose?: () => void };
 
-export default function Sidebar({ showHeader = true }: SidebarProps) {
+export default function Sidebar({ showHeader = true, onClose }: SidebarProps) {
   const pathname = usePathname();
 
   return (
     <div className="flex h-full w-64 flex-col bg-black border-r border-gray-800">
       {showHeader && (
-        <div className="flex h-16 items-center px-4 border-b border-gray-800">
+        <div className="flex h-16 items-center px-4 border-b border-gray-800 justify-between">
           <div className="flex items-center gap-2">
             <div className="bg-blue-600 w-8 h-8 rounded flex items-center justify-center text-xs font-bold">RH</div>
             <span className="font-semibold text-white">RemoteHub</span>
           </div>
+          {onClose && (
+            <button onClick={onClose} aria-label="Close menu" className="md:hidden inline-flex items-center justify-center h-8 w-8 rounded-lg border border-gray-800 text-gray-300 hover:bg-gray-900">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          )}
         </div>
       )}
       
