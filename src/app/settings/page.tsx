@@ -28,7 +28,6 @@ export default function SettingsPage() {
   const [active, setActive] = useState("company");
   const [domain, setDomain] = useState("remotehub.com");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState("RemoteHub");
   const [firstName, setFirstName] = useState("RemoteHub");
   const [jobTitle, setJobTitle] = useState("software-development");
   const [department, setDepartment] = useState("engineering");
@@ -66,7 +65,7 @@ export default function SettingsPage() {
           {/* Company Information */}
           <Card title="Company Information">
             <div className="space-y-5">
-              <p className="text-sm text-gray-400">Manage your organization's details.</p>
+              <p className="text-sm text-gray-400">Manage your organization&#39;s details.</p>
               {/* Grid with logo and form fields */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Left: Logo + Company name */}
@@ -94,7 +93,7 @@ export default function SettingsPage() {
                     {/* Company Name text */}
                     <div className="flex-1">
                       <div className="text-sm font-medium text-gray-200">Company Name</div>
-                      <div className="text-xs text-gray-400">Manage your organization's details</div>
+                      <div className="text-xs text-gray-400">Manage your organization&#39;s details</div>
                     </div>
                   </div>
 
@@ -328,7 +327,7 @@ export default function SettingsPage() {
 
       {active !== "company" && active !== "profile" && (
         <Card>
-          <div className="text-gray-400 text-sm">This section is a placeholder for the "{tabs.find(t=>t.key===active)?.label}" tab.</div>
+          <div className="text-gray-400 text-sm">This section is a placeholder for the {tabs.find(t=>t.key===active)?.label} tab.</div>
         </Card>
       )}
     </div>
