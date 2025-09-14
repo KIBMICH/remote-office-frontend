@@ -24,17 +24,32 @@ const departments = [
   { label: "HR", value: "hr" },
 ];
 
+// Shared list of countries used in Company and Profile tabs
+const countries = [
+  { label: "Nigeria", value: "ng" },
+  { label: "United States", value: "us" },
+  { label: "United Kingdom", value: "uk" },
+  { label: "Canada", value: "ca" },
+];
+
 export default function SettingsPage() {
   const [active, setActive] = useState("company");
-  const [domain, setDomain] = useState("remotehub.com");
+  const [domain, setDomain] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [firstName, setFirstName] = useState("RemoteHub");
+  const [firstName, setFirstName] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [jobTitle, setJobTitle] = useState("software-development");
   const [department, setDepartment] = useState("engineering");
-  const [contactEmail, setContactEmail] = useState("axe.iron@remotehub.com");
-  const [contactNumber, setContactNumber] = useState("+1 (555) 010-4455");
-  const [website, setWebsite] = useState("remotehub.com");
-  const [info, setInfo] = useState("info@telnis");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactNumber, setContactNumber] = useState("");
+  const [website, setWebsite] = useState("");
+  const [info, setInfo] = useState("");
+  // Company fields
+  const [companyAddress, setCompanyAddress] = useState("");
+  const [companyCountry, setCompanyCountry] = useState("ng");
+  // Profile fields
+  const [profileAddress, setProfileAddress] = useState("");
+  const [profileCountry, setProfileCountry] = useState("ng");
 
   const tabs = [
     { key: "company", label: "Company" },
@@ -98,14 +113,12 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Wide grey action */}
-                  <div className="mt-3">
-                    <Button size="sm" className="w-full bg-gray-800 hover:bg-gray-700 text-gray-100 border border-gray-700">Upload/Change Logo</Button>
-                  </div>
+                 
                 </div>
 
                 {/* Middle: fields */}
                 <div className="space-y-4">
-                  <Input variant="dark" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First Name" />
+                  <Input variant="dark" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Company Name" />
                   <Select
                     value={jobTitle}
                     onChange={setJobTitle}
@@ -123,6 +136,18 @@ export default function SettingsPage() {
                   />
                   <Input variant="dark" value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} placeholder="Contact Number" />
                   <Input variant="dark" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="Website" />
+                </div>
+              </div>
+
+              {/* Company Address and Country (wider layout) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="space-y-2 md:col-span-2">
+                  <div className="text-sm text-gray-300">Address</div>
+                  <Input variant="dark" value={companyAddress} onChange={(e)=>setCompanyAddress(e.target.value)} placeholder="Address" />
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-300">Country</div>
+                  <Select value={companyCountry} onChange={setCompanyCountry} options={countries} />
                 </div>
               </div>
 
@@ -219,13 +244,7 @@ export default function SettingsPage() {
               </table>
             </div>
 
-            <div className="mt-4 flex items-center justify-between">
-              <div className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-600/15 text-emerald-400 border border-emerald-700/40 rounded-md text-sm">
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-                Company settings updated successfully
-              </div>
+            <div className="mt-4 flex items-center justify-end">
               <Button className="bg-blue-600 hover:bg-blue-700 text-white">Save Company Settings</Button>
             </div>
           </Card>
@@ -310,14 +329,21 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="mt-4 flex items-center justify-between">
-                <div className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-600/15 text-emerald-400 border border-emerald-700/40 rounded-md text-sm">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 6 9 17l-5-5" />
-                  </svg>
-                  Profile updated successfully
+              {/* Address and Country */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="space-y-2 md:col-span-2">
+                  <div className="text-sm text-gray-300">Address</div>
+                  <Input variant="dark" value={profileAddress} onChange={(e)=>setProfileAddress(e.target.value)} placeholder="Address" />
                 </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-300">Country</div>
+                  <Select value={profileCountry} onChange={setProfileCountry} options={countries} />
+                </div>
+                <div className="hidden md:block" />
+              </div>
+
+              {/* Footer */}
+              <div className="mt-4 flex items-center justify-end">
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white">Save Changes</Button>
               </div>
             </div>
