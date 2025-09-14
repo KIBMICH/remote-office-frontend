@@ -2,8 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "../hooks/useAuth";
-import api from "@/utils/api";
-import { API_ENDPOINTS } from "@/utils/constants";
+import api from "../lib/api";
 
 interface User {
   id: string;
@@ -57,20 +56,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (profile) {
           
           // Normalize to our User shape
+          const profileData = profile as Record<string, unknown>;
           const normalized: User = {
             id: (typeof profile._id === 'object' ? profile._id?.$oid : profile._id) || profile.id || "",
             email: profile.email,
             name: profile.name,
             company: profile.company,
-            avatarUrl: (profile as any).avatarUrl,
-            firstName: (profile as any).firstName,
-            lastName: (profile as any).lastName,
-            phone: (profile as any).phone,
-            jobTitle: (profile as any).jobTitle,
-            timezone: (profile as any).timezone,
-            language: (profile as any).language,
-            status: (profile as any).status,
-            country: (profile as any).country,
+            avatarUrl: profileData.avatarUrl as string,
+            firstName: profileData.firstName as string,
+            lastName: profileData.lastName as string,
+            phone: profileData.phone as string,
+            jobTitle: profileData.jobTitle as string,
+            timezone: profileData.timezone as string,
+            language: profileData.language as string,
+            status: profileData.status as string,
+            country: profileData.country as string,
           };
           setUser(normalized);
         }

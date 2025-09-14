@@ -99,8 +99,8 @@ export default function SettingsPage() {
     if (user.country) setProfileCountry(user.country);
     
     // Check for address field (might be named differently)
-    if ((user as any).address) setProfileAddress((user as any).address);
-    if ((user as any).profileAddress) setProfileAddress((user as any).profileAddress);
+    if (user.address) setProfileAddress(user.address);
+    if ((user as unknown as Record<string, unknown>).profileAddress) setProfileAddress((user as unknown as Record<string, unknown>).profileAddress as string);
     
     
     // Avatar preview from user data
@@ -131,7 +131,7 @@ export default function SettingsPage() {
       setErrorMessage(null);
       await companyService.uploadLogo(file);
       setCompanyMessage("Company logo uploaded successfully.");
-    } catch (err) {
+    } catch {
       setErrorMessage("Failed to upload company logo. Please try again.");
     }
   };
@@ -153,7 +153,7 @@ export default function SettingsPage() {
         country: companyCountry,
       });
       setCompanyMessage("Company settings saved.");
-    } catch (e) {
+    } catch {
       setErrorMessage("Failed to save company settings.");
     } finally {
       setCompanySaving(false);
@@ -194,7 +194,7 @@ export default function SettingsPage() {
       }
       
       setProfileMessage("Profile updated.");
-    } catch (e) {
+    } catch {
       setErrorMessage("Failed to update profile.");
     } finally {
       setProfileSaving(false);
@@ -227,7 +227,7 @@ export default function SettingsPage() {
         setAvatarPreview(updatedUser.avatarUrl);
       }
       setProfileMessage("Profile image uploaded successfully.");
-    } catch (e) {
+    } catch {
       setErrorMessage("Failed to upload avatar.");
     }
   };
