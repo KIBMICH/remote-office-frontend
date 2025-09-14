@@ -2,11 +2,11 @@ import axios from "axios";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "/api",
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api",
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 10000,
+  timeout: 30000, // Increased to 30 seconds for slower connections
 });
 
 // Request interceptor to add auth token
@@ -32,6 +32,16 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       window.location.href = "/sign-in";
     }
+    
+    // Enhanced error handling for timeouts and network issues
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      console.error('Request timeout - check your network connection or backend availability');
+    }
+    
+    if (!error.response && error.request) {
+      console.error('Network error - unable to reach the server');
+    }
+    
     return Promise.reject(error);
   }
 );

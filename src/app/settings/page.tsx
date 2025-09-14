@@ -1,12 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Tabs from "@/components/ui/Tabs";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Badge from "@/components/ui/Badge";
 import Select from "@/components/ui/Select";
+import { userService } from "@/services/userService";
+import { companyService } from "@/services/companyService";
+import { useAuthContext } from "@/context/AuthContext";
+import { UI_CONSTANTS } from "@/utils/constants";
 
 const jobTitles = [
   { label: "Software Development", value: "software-development" },
@@ -33,14 +37,18 @@ const countries = [
 ];
 
 export default function SettingsPage() {
+  const { user, isAuthenticated, setUser, loading } = useAuthContext();
+
   const [active, setActive] = useState("company");
   const [domain, setDomain] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [jobTitle, setJobTitle] = useState("software-development");
   const [department, setDepartment] = useState("engineering");
-  const [contactEmail, setContactEmail] = useState("");
+  const [contactEmail, setContactEmail] = useState(user?.email ?? ""); // Pre-populate email from auth context
   const [contactNumber, setContactNumber] = useState("");
   const [website, setWebsite] = useState("");
   const [info, setInfo] = useState("");
@@ -51,6 +59,15 @@ export default function SettingsPage() {
   const [profileAddress, setProfileAddress] = useState("");
   const [profileCountry, setProfileCountry] = useState("ng");
 
+  // Upload state
+  const [selectedLogo, setSelectedLogo] = useState<File | null>(null);
+  const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
+  const [companySaving, setCompanySaving] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [companyMessage, setCompanyMessage] = useState<string | null>(null);
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const tabs = [
     { key: "company", label: "Company" },
     { key: "profile", label: "Profile" },
@@ -58,12 +75,161 @@ export default function SettingsPage() {
     { key: "notifications", label: "Notifications" },
   ];
 
-  const onLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Keep inputs in sync when user data arrives/changes
+  useEffect(() => {
+    console.log('useEffect - loading:', loading, 'user:', user);
+    
+    // Don't populate fields while still loading or if no user
+    if (loading || !user) return;
+    
+    // Email
+    if (user.email) setContactEmail(user.email);
+    
+    // Parse name field since backend doesn't have separate firstName/lastName
+    if (user.name) {
+      const parts = user.name.split(" ");
+      console.log('Setting firstName:', parts[0], 'lastName:', parts.slice(1).join(" "));
+      setFirstName(parts[0] || "");
+      setLastName(parts.slice(1).join(" ") || "");
+    }
+    
+    // Set other profile fields if available from backend
+    if (user.phone) setContactNumber(user.phone);
+    if (user.jobTitle) setJobTitle(user.jobTitle);
+    if (user.country) setProfileCountry(user.country);
+    
+    // Check for address field (might be named differently)
+    if (user.address) setProfileAddress(user.address);
+    if ((user as unknown as Record<string, unknown>).profileAddress) setProfileAddress((user as unknown as Record<string, unknown>).profileAddress as string);
+    
+    
+    // Avatar preview from user data
+    if (user && user.avatarUrl) {
+      setAvatarPreview(user.avatarUrl);
+    }
+  }, [user, loading]);
+
+  const onLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Validate file type and size
+    if (!file.type.startsWith("image/")) {
+      setErrorMessage("Please upload a valid image file.");
+      return;
+    }
+    if (file.size > UI_CONSTANTS.MAX_FILE_SIZE) {
+      setErrorMessage("Image file is too large. Max size is 10MB.");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => setLogoPreview(reader.result as string);
     reader.readAsDataURL(file);
+    setSelectedLogo(file);
+    try {
+      // Immediately upload logo securely using FormData; Content-Type is handled by the browser
+      setCompanyMessage(null);
+      setErrorMessage(null);
+      await companyService.uploadLogo(file);
+      setCompanyMessage("Company logo uploaded successfully.");
+    } catch {
+      setErrorMessage("Failed to upload company logo. Please try again.");
+    }
+  };
+
+  const handleCompanySave = async () => {
+    // Basic validation and normalization
+    if (!companyName?.trim()) {
+      setErrorMessage("Company name is required.");
+      return;
+    }
+    setCompanySaving(true);
+    setCompanyMessage(null);
+    setErrorMessage(null);
+    try {
+      await companyService.update({
+        name: companyName.trim(),
+        phone: contactNumber?.trim() || undefined,
+        website: website?.trim() || undefined,
+        country: companyCountry,
+      });
+      setCompanyMessage("Company settings saved.");
+    } catch {
+      setErrorMessage("Failed to save company settings.");
+    } finally {
+      setCompanySaving(false);
+    }
+  };
+
+  const handleProfileSave = async () => {
+    // Basic validation for user update
+    if (!firstName?.trim() || !lastName?.trim()) {
+      setErrorMessage("First name and last name are required.");
+      return;
+    }
+    setProfileSaving(true);
+    setProfileMessage(null);
+    setErrorMessage(null);
+    try {
+      const payload = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: contactNumber?.trim() || undefined,
+        jobTitle: jobTitle,
+        language: "en",
+        country: profileCountry,
+        address: profileAddress?.trim() || undefined,
+      };
+      const updatedUser = await userService.updateMe(payload);
+      
+      // Update user context with new data
+      if (user && updatedUser) {
+        setUser({ 
+          ...user, 
+          ...updatedUser,
+          // Update the name field to reflect the new firstName/lastName
+          name: `${firstName.trim()} ${lastName.trim()}`,
+          // Manually add address since backend doesn't return it
+          address: profileAddress?.trim() || undefined
+        });
+      }
+      
+      setProfileMessage("Profile updated.");
+    } catch {
+      setErrorMessage("Failed to update profile.");
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Validate file type and size
+    if (!file.type.startsWith("image/")) {
+      setErrorMessage("Please upload a valid image file.");
+      return;
+    }
+    if (file.size > UI_CONSTANTS.MAX_FILE_SIZE) {
+      setErrorMessage("Image file is too large. Max size is 10MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setAvatarPreview(reader.result as string);
+    reader.readAsDataURL(file);
+    setSelectedAvatar(file);
+    setProfileMessage(null);
+    setErrorMessage(null);
+    try {
+      const updatedUser = await userService.uploadAvatar(file);
+      // Update user context with new avatar URL
+      if (updatedUser.avatarUrl && user) {
+        setUser({ ...user, avatarUrl: updatedUser.avatarUrl });
+        setAvatarPreview(updatedUser.avatarUrl);
+      }
+      setProfileMessage("Profile image uploaded successfully.");
+    } catch {
+      setErrorMessage("Failed to upload avatar.");
+    }
   };
 
   const currentTabLabel = tabs.find(t => t.key === active)?.label ?? "Company";
@@ -112,8 +278,13 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Wide grey action */}
-                 
+                  {/* Messages */}
+                  {companyMessage && (
+                    <div className="mt-3 text-xs text-green-400">{companyMessage}</div>
+                  )}
+                  {errorMessage && (
+                    <div className="mt-3 text-xs text-red-400">{errorMessage}</div>
+                  )}
                 </div>
 
                 {/* Middle: fields */}
@@ -245,7 +416,9 @@ export default function SettingsPage() {
             </div>
 
             <div className="mt-4 flex items-center justify-end">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">Save Company Settings</Button>
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white" disabled={companySaving || !isAuthenticated} onClick={handleCompanySave}>
+                {companySaving ? "Saving..." : "Save Company Settings"}
+              </Button>
             </div>
           </Card>
         </div>
@@ -261,13 +434,21 @@ export default function SettingsPage() {
                 <div className="border border-gray-800 rounded-lg p-4 bg-gray-950/50">
                   <div className="flex items-center gap-4">
                     <div className="flex flex-col items-center">
-                      <div className="h-20 w-20 rounded-full bg-gray-700 ring-1 ring-gray-600/60 flex items-center justify-center">
-                        <svg className="h-8 w-8 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                          <circle cx="12" cy="8" r="3" />
-                          <path d="M4 20a8 8 0 0 1 16 0" />
-                        </svg>
+                      <div className="h-20 w-20 rounded-full bg-gray-700 ring-1 ring-gray-600/60 flex items-center justify-center relative overflow-hidden">
+                        {avatarPreview ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={avatarPreview} alt="Avatar" className="h-full w-full object-cover" />
+                        ) : (
+                          <svg className="h-8 w-8 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                            <circle cx="12" cy="8" r="3" />
+                            <path d="M4 20a8 8 0 0 1 16 0" />
+                          </svg>
+                        )}
                       </div>
-                      <button className="mt-2 inline-flex px-3 py-1 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700">Upload/Change</button>
+                      <label className="mt-2 inline-flex px-3 py-1 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">
+                        <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                        Upload/Change
+                      </label>
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-medium text-gray-200">Profile Picture</div>
@@ -279,20 +460,20 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <Input variant="dark" placeholder="First Name" value={firstName} onChange={(e)=>setFirstName(e.target.value)} />
                   <Input variant="dark" placeholder="Phone Number" value={contactNumber} onChange={(e)=>setContactNumber(e.target.value)} />
-                  <Input variant="dark" placeholder="Job Title" />
+                  <Input variant="dark" placeholder="Job Title" value={jobTitle} onChange={(e)=>setJobTitle(e.target.value)} />
                 </div>
 
                 {/* Right fields */}
                 <div className="space-y-4">
-                  <Input variant="dark" placeholder="Last Name" />
-                  <Input variant="dark" placeholder="Phone Number" />
+                  <Input variant="dark" placeholder="Last Name" value={lastName} onChange={(e)=>setLastName(e.target.value)} />
+                  <Input variant="dark" placeholder="Email (read-only)" value={user?.email ?? ""} readOnly />
                   <Select value={department} onChange={setDepartment} options={departments} />
                 </div>
               </div>
 
               {/* Read-only email bar with lock */}
               <div className="relative">
-                <Input variant="dark" readOnly placeholder="(Read-only)" value="" />
+                <Input variant="dark" readOnly placeholder="(Read-only)" value={user?.email ?? ""} />
                 <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center rounded-md border border-gray-700 bg-gray-900/80 text-gray-400">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                     <path d="M12 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
@@ -342,9 +523,19 @@ export default function SettingsPage() {
                 <div className="hidden md:block" />
               </div>
 
+              {/* Messages */}
+              {profileMessage && (
+                <div className="text-xs text-green-400">{profileMessage}</div>
+              )}
+              {errorMessage && (
+                <div className="text-xs text-red-400">{errorMessage}</div>
+              )}
+
               {/* Footer */}
               <div className="mt-4 flex items-center justify-end">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">Save Changes</Button>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white" disabled={profileSaving || !isAuthenticated} onClick={handleProfileSave}>
+                  {profileSaving ? "Saving..." : "Save Changes"}
+                </Button>
               </div>
             </div>
           </Card>

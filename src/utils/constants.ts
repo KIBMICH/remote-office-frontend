@@ -11,6 +11,15 @@ export const API_ENDPOINTS = {
     PROFILE: "api/user/profile",
     UPDATE: "api/user/update",
   },
+  // Additional explicit endpoints used by Settings integrations
+  USERS: {
+    UPDATE: "api/users/update", // PUT
+    AVATAR: "api/users/avatar", // PATCH multipart/form-data
+  },
+  COMPANY: {
+    UPDATE: "api/company/update", // PUT
+    LOGO: "api/company/logo", // PATCH multipart/form-data
+  },
   TEAM: {
     LIST: "api/teams",
     CREATE: "api/teams",
