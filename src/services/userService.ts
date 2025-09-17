@@ -78,9 +78,12 @@ export const userService = {
       });
       console.log('Avatar upload successful:', data);
       return data;
-    } catch (error: any) {
+    } catch (err: unknown) {
+      // Narrow unknown error
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const error = err as any;
       console.error('Avatar upload failed:', error);
-      if (error.response) {
+      if (error?.response) {
         console.error('Response status:', error.response.status);
         console.error('Response data:', error.response.data);
         console.error('Response headers:', error.response.headers);
@@ -94,11 +97,11 @@ export const userService = {
           console.error('Backend error details:', error.response.data.error);
         }
       }
-      if (error.request) {
+      if (error?.request) {
         console.error('Request details:', error.request);
       }
-      console.error('Error config:', error.config);
-      console.error('Error message:', error.message);
+      if (error?.config) console.error('Error config:', error.config);
+      if (error?.message) console.error('Error message:', error.message);
       throw error;
     }
   },

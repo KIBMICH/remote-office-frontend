@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import Tabs from "@/components/ui/Tabs";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -38,7 +38,7 @@ const countries = [
 ];
 
 export default function SettingsPage() {
-  const { user, isAuthenticated, setUser, loading, logout } = useAuthContext();
+  const { user, isAuthenticated, setUser, loading } = useAuthContext();
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Default to Profile tab; we'll enable Company for company_admin only
@@ -47,7 +47,6 @@ export default function SettingsPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [hasLocalAvatarPreview, setHasLocalAvatarPreview] = useState<boolean>(false);
-  const [avatarKey, setAvatarKey] = useState(0); // Force re-render of avatar
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -60,13 +59,11 @@ export default function SettingsPage() {
   // Company fields
   const [companyAddress, setCompanyAddress] = useState("");
   const [companyCountry, setCompanyCountry] = useState("ng");
-  // Profile fields
+
   const [profileAddress, setProfileAddress] = useState("");
   const [profileCountry, setProfileCountry] = useState("ng");
 
-  // Upload state
-  const [selectedLogo, setSelectedLogo] = useState<File | null>(null);
-  const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
+ 
   const [companySaving, setCompanySaving] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -94,24 +91,24 @@ export default function SettingsPage() {
       // We only set to company on first load when active is still profile and fields are empty
       setActive((prev) => (prev === "profile" ? "company" : prev));
     }
-  }, [user?.role]);
+  }, [user?.role, active]);
 
   // Function to populate profile fields from user data
-  const populateProfileFields = (userData?: typeof user) => {
+  const populateProfileFields = useCallback((userData?: typeof user) => {
     const userToUse = userData || user;
     if (loading || !userToUse) {
       console.log('Cannot populate profile fields - loading:', loading, 'user:', !!userToUse);
       return;
     }
     
-    console.log('Populating profile fields with user data:', userToUse);
+   
     
     // Email
     if (userToUse.email) setContactEmail(userToUse.email);
     
     // Handle firstName/lastName from user object directly or parse from name
     if (userToUse.firstName && userToUse.lastName) {
-      console.log('Using direct firstName/lastName:', userToUse.firstName, userToUse.lastName);
+     
       setFirstName(userToUse.firstName);
       setLastName(userToUse.lastName);
     } else if (userToUse.name) {
@@ -135,29 +132,38 @@ export default function SettingsPage() {
     if (!hasLocalAvatarPreview && userToUse && userToUse.avatarUrl) {
       setAvatarPreview(userToUse.avatarUrl);
     }
-  };
+  }, [user, loading, hasLocalAvatarPreview]);
 
   // Fetch company data when opening Company tab (company_admin only)
   useEffect(() => {
     const fetchCompany = async () => {
       try {
         const result = await companyService.get();
-        // Normalize various possible response shapes from backend
-        const unwrap = (res: any): any => {
-          if (!res) return null;
-          if (Array.isArray(res)) return res[0] ?? null;
-          if (res?.company) return res.company;
-          if (res?.data?.company) return res.data.company;
-          if (res?.data) return Array.isArray(res.data) ? res.data[0] : res.data;
-          return res;
+        // Normalize various possible response shapes from backend without using `any`
+        type CompanyLike = Record<string, unknown>;
+        const unwrap = (res: unknown): CompanyLike | null => {
+          const r = res as unknown as CompanyLike | { data?: unknown } | { company?: unknown } | CompanyLike[] | null | undefined;
+          if (!r) return null;
+          // Arrays -> pick first
+          if (Array.isArray(r)) return (r[0] as CompanyLike) ?? null;
+          // Objects with common wrappers
+          const maybeCompany = (r as { company?: unknown }).company ?? (r as { data?: unknown }).data;
+          if (maybeCompany) {
+            if (Array.isArray(maybeCompany)) return (maybeCompany[0] as CompanyLike) ?? null;
+            return maybeCompany as CompanyLike;
+          }
+          return r as CompanyLike;
         };
 
         const c = unwrap(result);
         if (c) {
-          const get = (obj: any, keys: string[], fallback: any = "") => {
+          const get = (obj: CompanyLike, keys: readonly string[], fallback = ""): string => {
             for (const k of keys) {
-              const v = obj?.[k];
-              if (v !== undefined && v !== null && String(v).length > 0) return v as string;
+              const v = obj[k];
+              if (v !== undefined && v !== null) {
+                const s = String(v);
+                if (s.length > 0) return s;
+              }
             }
             return fallback;
           };
@@ -196,7 +202,7 @@ export default function SettingsPage() {
     console.log('useEffect - loading:', loading, 'user:', user, 'hasLocalAvatarPreview:', hasLocalAvatarPreview);
     if (hasLocalAvatarPreview) return; // do not override local avatar preview
     populateProfileFields();
-  }, [user, loading, hasLocalAvatarPreview]);
+  }, [user, loading, hasLocalAvatarPreview, populateProfileFields]);
 
   // Ensure profile fields are populated when switching to profile tab
   useEffect(() => {
@@ -230,7 +236,7 @@ export default function SettingsPage() {
       
       fetchFreshUserData();
     }
-  }, [active, isAuthenticated, loading, user]);
+  }, [active, isAuthenticated, loading, user, hasLocalAvatarPreview, populateProfileFields, setUser]);
 
   const onLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -247,7 +253,6 @@ export default function SettingsPage() {
     const reader = new FileReader();
     reader.onload = () => setLogoPreview(reader.result as string);
     reader.readAsDataURL(file);
-    setSelectedLogo(file);
     try {
       // Immediately upload logo securely using FormData; Content-Type is handled by the browser
       setCompanyMessage(null);
@@ -346,7 +351,6 @@ export default function SettingsPage() {
       setAvatarPreview(reader.result as string);
     };
     reader.readAsDataURL(file);
-    setSelectedAvatar(file);
     setProfileMessage(null);
     setErrorMessage(null);
     setAvatarUploading(true);
@@ -609,7 +613,6 @@ export default function SettingsPage() {
                         />
                       ) : (
                         <Avatar 
-                          key={`avatar-${avatarKey}`}
                           src={user?.avatarUrl} 
                           alt="Profile Avatar"
                           fallback={user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
