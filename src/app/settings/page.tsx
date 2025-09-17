@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Tabs from "@/components/ui/Tabs";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Badge from "@/components/ui/Badge";
 import Select from "@/components/ui/Select";
+import Avatar from "@/components/ui/Avatar";
 import { userService } from "@/services/userService";
 import { companyService } from "@/services/companyService";
 import { useAuthContext } from "@/context/AuthContext";
@@ -37,12 +38,15 @@ const countries = [
 ];
 
 export default function SettingsPage() {
-  const { user, isAuthenticated, setUser, loading } = useAuthContext();
+  const { user, isAuthenticated, setUser, loading, logout } = useAuthContext();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const [active, setActive] = useState("company");
   const [domain, setDomain] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [hasLocalAvatarPreview, setHasLocalAvatarPreview] = useState<boolean>(false);
+  const [avatarKey, setAvatarKey] = useState(0); // Force re-render of avatar
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -64,6 +68,7 @@ export default function SettingsPage() {
   const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
   const [companySaving, setCompanySaving] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [companyMessage, setCompanyMessage] = useState<string | null>(null);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -75,39 +80,87 @@ export default function SettingsPage() {
     { key: "notifications", label: "Notifications" },
   ];
 
-  // Keep inputs in sync when user data arrives/changes
-  useEffect(() => {
-    console.log('useEffect - loading:', loading, 'user:', user);
+  // Function to populate profile fields from user data
+  const populateProfileFields = (userData?: typeof user) => {
+    const userToUse = userData || user;
+    if (loading || !userToUse) {
+      console.log('Cannot populate profile fields - loading:', loading, 'user:', !!userToUse);
+      return;
+    }
     
-    // Don't populate fields while still loading or if no user
-    if (loading || !user) return;
+    console.log('Populating profile fields with user data:', userToUse);
     
     // Email
-    if (user.email) setContactEmail(user.email);
+    if (userToUse.email) setContactEmail(userToUse.email);
     
-    // Parse name field since backend doesn't have separate firstName/lastName
-    if (user.name) {
-      const parts = user.name.split(" ");
-      console.log('Setting firstName:', parts[0], 'lastName:', parts.slice(1).join(" "));
+    // Handle firstName/lastName from user object directly or parse from name
+    if (userToUse.firstName && userToUse.lastName) {
+      console.log('Using direct firstName/lastName:', userToUse.firstName, userToUse.lastName);
+      setFirstName(userToUse.firstName);
+      setLastName(userToUse.lastName);
+    } else if (userToUse.name) {
+      const parts = userToUse.name.split(" ");
+      console.log('Parsing name field - firstName:', parts[0], 'lastName:', parts.slice(1).join(" "));
       setFirstName(parts[0] || "");
       setLastName(parts.slice(1).join(" ") || "");
     }
     
     // Set other profile fields if available from backend
-    if (user.phone) setContactNumber(user.phone);
-    if (user.jobTitle) setJobTitle(user.jobTitle);
-    if (user.country) setProfileCountry(user.country);
+    if (userToUse.phone) setContactNumber(userToUse.phone);
+    if (userToUse.jobTitle) setJobTitle(userToUse.jobTitle);
+    if (userToUse.country) setProfileCountry(userToUse.country);
     
     // Check for address field (might be named differently)
-    if (user.address) setProfileAddress(user.address);
-    if ((user as unknown as Record<string, unknown>).profileAddress) setProfileAddress((user as unknown as Record<string, unknown>).profileAddress as string);
-    
+    if (userToUse.address) setProfileAddress(userToUse.address);
+    if ((userToUse as unknown as Record<string, unknown>).profileAddress) setProfileAddress((userToUse as unknown as Record<string, unknown>).profileAddress as string);
     
     // Avatar preview from user data
-    if (user && user.avatarUrl) {
-      setAvatarPreview(user.avatarUrl);
+    // Do not override if a local preview (just-selected image) is active
+    if (!hasLocalAvatarPreview && userToUse && userToUse.avatarUrl) {
+      setAvatarPreview(userToUse.avatarUrl);
     }
-  }, [user, loading]);
+  };
+
+  // Keep inputs in sync when user data arrives/changes
+  useEffect(() => {
+    console.log('useEffect - loading:', loading, 'user:', user, 'hasLocalAvatarPreview:', hasLocalAvatarPreview);
+    if (hasLocalAvatarPreview) return; // do not override local avatar preview
+    populateProfileFields();
+  }, [user, loading, hasLocalAvatarPreview]);
+
+  // Ensure profile fields are populated when switching to profile tab
+  useEffect(() => {
+    if (active === "profile" && isAuthenticated && !loading) {
+      console.log('Switched to profile tab, ensuring data is populated. hasLocalAvatarPreview:', hasLocalAvatarPreview);
+      
+      // Populate only if not showing a local avatar preview
+      if (!hasLocalAvatarPreview) {
+        populateProfileFields();
+      }
+      
+      // Always fetch fresh data when switching to profile tab to ensure we have the latest
+      const fetchFreshUserData = async () => {
+        try {
+          console.log('Fetching fresh user data for profile tab...');
+          const updatedUser = await userService.getMe();
+          if (updatedUser) {
+            console.log('Fresh user data received:', updatedUser);
+            // Merge the fresh data with existing user data
+            const mergedUser = { ...user, ...updatedUser };
+            setUser(mergedUser);
+            // Immediately populate fields with fresh data
+            populateProfileFields(mergedUser);
+          }
+        } catch (error) {
+          console.error('Failed to fetch fresh user data:', error);
+          // If fetch fails, still try to populate with existing data
+          populateProfileFields();
+        }
+      };
+      
+      fetchFreshUserData();
+    }
+  }, [active, isAuthenticated, loading, user]);
 
   const onLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -204,6 +257,7 @@ export default function SettingsPage() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
     // Validate file type and size
     if (!file.type.startsWith("image/")) {
       setErrorMessage("Please upload a valid image file.");
@@ -213,22 +267,64 @@ export default function SettingsPage() {
       setErrorMessage("Image file is too large. Max size is 10MB.");
       return;
     }
+    
+    // Lock into local preview mode immediately and show local preview
+    setHasLocalAvatarPreview(true);
     const reader = new FileReader();
-    reader.onload = () => setAvatarPreview(reader.result as string);
+    reader.onload = () => {
+      setAvatarPreview(reader.result as string);
+    };
     reader.readAsDataURL(file);
     setSelectedAvatar(file);
     setProfileMessage(null);
     setErrorMessage(null);
-    try {
-      const updatedUser = await userService.uploadAvatar(file);
-      // Update user context with new avatar URL
-      if (updatedUser.avatarUrl && user) {
-        setUser({ ...user, avatarUrl: updatedUser.avatarUrl });
-        setAvatarPreview(updatedUser.avatarUrl);
+    setAvatarUploading(true);
+    
+    // Add a safety timeout to prevent infinite loading
+    const uploadTimeout = setTimeout(() => {
+      console.error('Avatar upload timed out after 65 seconds');
+      setErrorMessage("Upload timed out. Please try again with a smaller file.");
+      setAvatarUploading(false);
+      // Do not override local preview on timeout
+      // Keep showing the selected image; user can refresh to propagate app-wide
+      // setAvatarPreview(user?.avatarUrl || null);
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
       }
+    }, 65000); // 65 seconds (5 seconds more than the API timeout)
+    
+    try {
+      console.log('Starting avatar upload process...');
+      const updatedUser = await userService.uploadAvatar(file);
+      clearTimeout(uploadTimeout); // Clear timeout on success
+      console.log('Avatar upload response:', updatedUser);
+      
+      // Keep showing the local preview; do not swap to backend URL here.
+      // The new image will appear across the app after a refresh.
+      // Intentionally NOT updating user context or avatarPreview with backend URL to avoid spinner.
       setProfileMessage("Profile image uploaded successfully.");
-    } catch {
-      setErrorMessage("Failed to upload avatar.");
+      setAvatarUploading(false); // Explicitly stop loading on success
+      
+      // Reset the file input to allow uploading the same file again if needed
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
+      }
+    } catch (error) {
+      clearTimeout(uploadTimeout); // Clear timeout on error
+      console.error('Avatar upload error in settings:', error);
+      setErrorMessage("Failed to upload avatar. Please try again.");
+      setAvatarUploading(false); // Explicitly stop loading on error
+      // Reset preview on error
+      // Do not override local preview on error
+      // setAvatarPreview(user?.avatarUrl || null);
+      
+      // Reset the file input on error as well
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
+      }
+    } finally {
+      // Ensure loading is stopped in all cases
+      setAvatarUploading(false);
     }
   };
 
@@ -434,24 +530,41 @@ export default function SettingsPage() {
                 <div className="border border-gray-800 rounded-lg p-4 bg-gray-950/50">
                   <div className="flex items-center gap-4">
                     <div className="flex flex-col items-center">
-                      <div className="h-20 w-20 rounded-full bg-gray-700 ring-1 ring-gray-600/60 flex items-center justify-center relative overflow-hidden">
-                        {avatarPreview ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={avatarPreview} alt="Avatar" className="h-full w-full object-cover" />
-                        ) : (
-                          <svg className="h-8 w-8 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                            <circle cx="12" cy="8" r="3" />
-                            <path d="M4 20a8 8 0 0 1 16 0" />
-                          </svg>
+                      {avatarPreview ? (
+                        <img
+                          src={avatarPreview}
+                          alt="Profile Avatar Preview"
+                          className="h-20 w-20 object-cover rounded-full"
+                        />
+                      ) : (
+                        <Avatar 
+                          key={`avatar-${avatarKey}`}
+                          src={user?.avatarUrl} 
+                          alt="Profile Avatar"
+                          fallback={user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                          size="xl"
+                        />
+                      )}
+                      <label className={`mt-2 inline-flex items-center gap-1 px-3 py-1 text-xs rounded-md ${avatarUploading ? 'bg-gray-600 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'} text-white`}>
+                        <input 
+                          ref={avatarInputRef}
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={handleAvatarUpload}
+                          disabled={avatarUploading}
+                        />
+                        {avatarUploading && (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b border-white"></div>
                         )}
-                      </div>
-                      <label className="mt-2 inline-flex px-3 py-1 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">
-                        <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                        Upload/Change
+                        {avatarUploading ? 'Uploading...' : 'Upload/Change'}
                       </label>
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-medium text-gray-200">Profile Picture</div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {user?.avatarUrl ? 'Current avatar loaded' : 'No avatar uploaded'}
+                      </div>
                     </div>
                   </div>
                 </div>

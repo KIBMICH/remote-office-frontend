@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React from "react";
+import { useAuthContext } from "@/context/AuthContext";
 
 const navigation = [
   { name: "Home", href: "/dashboard", icon: HomeIcon },
@@ -18,6 +19,13 @@ type SidebarProps = { showHeader?: boolean; onClose?: () => void };
 
 export default function Sidebar({ showHeader = true, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuthContext();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/sign-in');
+  };
 
   return (
     <div className="flex h-full w-64 flex-col bg-black border-r border-gray-800">
@@ -71,16 +79,37 @@ export default function Sidebar({ showHeader = true, onClose }: SidebarProps) {
           <PlayIcon className="w-4 h-4" />
           <span>Start Meeting</span>
         </button>
-        <div className="flex items-center space-x-3 pt-2">
-          <div className="h-8 w-8 rounded-full bg-gray-600" />
+        <div className="flex items-center space-x-3 pt-6">
+          <div className="h-8 w-8 rounded-full bg-gray-600 overflow-hidden">
+            {user?.avatarUrl ? (
+              <img 
+                src={user.avatarUrl} 
+                alt="Profile" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-600 flex items-center justify-center text-white text-sm font-semibold">
+                {user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">User Name</p>
-            <p className="text-xs text-gray-400 truncate">user@example.com</p>
+            <p className="text-sm font-medium text-white truncate">{user?.name || 'User Name'}</p>
+            <p className="text-xs text-gray-400 truncate">{user?.email || 'user@example.com'}</p>
           </div>
           <button className="text-gray-400 hover:text-white" aria-label="Notifications">
             <BellIcon className="h-5 w-5" />
           </button>
         </div>
+        
+        {/* Logout Button */}
+        <button 
+          onClick={handleLogout}
+          className="w-full mt-3 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer"
+        >
+          <LogoutIcon className="w-4 h-4" />
+          <span>Logout</span>
+        </button>
       </div>
     </div>
   );
@@ -158,6 +187,15 @@ function PlayIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
       <path d="M8 5v14l11-7-11-7Z" />
+    </svg>
+  );
+}
+function LogoutIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16,17 21,12 16,7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
   );
 }

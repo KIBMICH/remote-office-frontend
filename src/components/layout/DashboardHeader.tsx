@@ -1,12 +1,15 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
+import { useAuthContext } from "@/context/AuthContext";
 
 type Props = {
   onMenuClick?: () => void;
 };
 
 export default function DashboardHeader({ onMenuClick }: Props) {
+  const { user } = useAuthContext();
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-gray-800">
       <div className="h-16 flex items-center justify-between px-4">
@@ -40,7 +43,17 @@ export default function DashboardHeader({ onMenuClick }: Props) {
             </button>
           </div>
           <div className="text-gray-300 text-sm">3</div>
-          <div className="w-8 h-8 bg-gray-700 rounded-full" />
+          <Link href="/settings" className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white text-sm font-semibold overflow-hidden hover:bg-gray-600 transition-colors cursor-pointer">
+            {user?.avatarUrl ? (
+              <img 
+                src={user.avatarUrl} 
+                alt="Profile" 
+                className="w-full h-full object-cover rounded-full"
+              />
+            ) : (
+              <span>{user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}</span>
+            )}
+          </Link>
         </div>
       </div>
     </header>

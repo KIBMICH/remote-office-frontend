@@ -86,14 +86,20 @@ const jobListings: Job[] = [
 ];
 
 export default function JobMarketplace() {
+  const router = useRouter();
+  const { isAuthenticated, loading, user, logout } = useAuthContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedJobType, setSelectedJobType] = useState("");
   const [selectedExperience, setSelectedExperience] = useState("");
   const [selectedCompanySize, setSelectedCompanySize] = useState("");
   const [selectedTechnologies, setSelectedTechnologies] = useState<string[]>([]);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const { isAuthenticated, loading } = useAuthContext();
-  const router = useRouter();
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    router.push('/sign-in');
+  };
 
   useEffect(() => {
     const hasToken = typeof window !== "undefined" && !!localStorage.getItem("token");
@@ -239,7 +245,7 @@ export default function JobMarketplace() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <header className="bg-gray-900 border-b border-gray-800 px-6 py-4">
+      <header className="bg-gray-900 border-b border-gray-800 pl-6 pr-2 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-8">
             <div className="text-xl font-bold text-blue-400">🏢 RemoteHub</div>
@@ -250,6 +256,42 @@ export default function JobMarketplace() {
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-400">Search over 50k jobs, companies +</span>
+            
+            {/* Profile Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white text-sm font-semibold overflow-hidden hover:bg-gray-600 transition-colors cursor-pointer"
+              >
+                {user?.avatarUrl ? (
+                  <img 
+                    src={user.avatarUrl} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <span>{user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}</span>
+                )}
+              </button>
+              
+              {/* Dropdown Menu */}
+              {isProfileDropdownOpen && (
+                <div className="absolute -right-2 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50">
+                  <div className="py-2">
+                    <div className="px-4 py-2 border-b border-gray-700">
+                      <p className="text-sm font-medium text-white truncate">{user?.name || 'User Name'}</p>
+                      <p className="text-xs text-gray-400 truncate">{user?.email || 'user@example.com'}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>

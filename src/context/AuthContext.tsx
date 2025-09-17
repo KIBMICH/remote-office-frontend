@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         console.log('Token found, fetching profile...');
-        const res = await api.get('api/users/me');
+        const res = await api.get('users/me');
         type RawId = string | { $oid?: string } | undefined;
         type RawProfile = { _id?: RawId; id?: string; email: string; name?: string; company?: unknown };
         type ApiProfile = { user?: RawProfile } | RawProfile;
@@ -90,9 +90,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const response = await authLogin(email, password);
-      if (response.user) {
-        setUser(response.user);
+      
+      // After successful login, fetch complete user profile data
+      if (response.token) {
+        try {
+          console.log('Login successful, fetching complete user profile...');
+          const profileRes = await api.get('users/me');
+          type RawId = string | { $oid?: string } | undefined;
+          type RawProfile = { _id?: RawId; id?: string; email: string; name?: string; company?: unknown };
+          type ApiProfile = { user?: RawProfile } | RawProfile;
+          const data = (profileRes as { data?: ApiProfile }).data;
+          const profile: RawProfile | undefined = (data && typeof data === 'object' && 'user' in data ? data.user : data) as RawProfile | undefined;
+          
+          if (profile) {
+            // Normalize to our User shape with complete profile data
+            const profileData = profile as Record<string, unknown>;
+            const normalized: User = {
+              id: (typeof profile._id === 'object' ? profile._id?.$oid : profile._id) || profile.id || "",
+              email: profile.email,
+              name: profile.name,
+              company: profile.company,
+              avatarUrl: profileData.avatarUrl as string,
+              firstName: profileData.firstName as string,
+              lastName: profileData.lastName as string,
+              phone: profileData.phone as string,
+              jobTitle: profileData.jobTitle as string,
+              timezone: profileData.timezone as string,
+              language: profileData.language as string,
+              status: profileData.status as string,
+              country: profileData.country as string,
+              address: profileData.address as string,
+            };
+            console.log('Setting complete user profile after login:', normalized);
+            setUser(normalized);
+          }
+        } catch (profileError) {
+          console.error('Failed to fetch profile after login:', profileError);
+          // Fallback to basic user data from login response
+          if (response.user) {
+            setUser(response.user);
+          }
+        }
       }
+      
       return response;
     } catch (error) {
       throw error;
