@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import Tabs from "@/components/ui/Tabs";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -41,7 +41,8 @@ export default function SettingsPage() {
   const { user, isAuthenticated, setUser, loading, logout } = useAuthContext();
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  const [active, setActive] = useState("company");
+  // Default to Profile tab; we'll enable Company for company_admin only
+  const [active, setActive] = useState("profile");
   const [domain, setDomain] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -73,12 +74,27 @@ export default function SettingsPage() {
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const tabs = [
-    { key: "company", label: "Company" },
-    { key: "profile", label: "Profile" },
-    { key: "security", label: "Security" },
-    { key: "notifications", label: "Notifications" },
-  ];
+  // Tabs are role-based: show Company only for company_admin
+  const tabs = useMemo(() => {
+    const base = [
+      { key: "profile", label: "Profile" },
+      { key: "security", label: "Security" },
+      { key: "notifications", label: "Notifications" },
+    ];
+    if (user?.role === "company_admin") {
+      return [{ key: "company", label: "Company" }, ...base];
+    }
+    return base;
+  }, [user?.role]);
+
+  // If user becomes company_admin and current tab is not company, optionally switch once
+  useEffect(() => {
+    if (user?.role === "company_admin" && active !== "company") {
+      // Keep the user's currently selected tab if they changed it; otherwise default to company
+      // We only set to company on first load when active is still profile and fields are empty
+      setActive((prev) => (prev === "profile" ? "company" : prev));
+    }
+  }, [user?.role]);
 
   // Function to populate profile fields from user data
   const populateProfileFields = (userData?: typeof user) => {
@@ -120,6 +136,60 @@ export default function SettingsPage() {
       setAvatarPreview(userToUse.avatarUrl);
     }
   };
+
+  // Fetch company data when opening Company tab (company_admin only)
+  useEffect(() => {
+    const fetchCompany = async () => {
+      try {
+        const result = await companyService.get();
+        // Normalize various possible response shapes from backend
+        const unwrap = (res: any): any => {
+          if (!res) return null;
+          if (Array.isArray(res)) return res[0] ?? null;
+          if (res?.company) return res.company;
+          if (res?.data?.company) return res.data.company;
+          if (res?.data) return Array.isArray(res.data) ? res.data[0] : res.data;
+          return res;
+        };
+
+        const c = unwrap(result);
+        if (c) {
+          const get = (obj: any, keys: string[], fallback: any = "") => {
+            for (const k of keys) {
+              const v = obj?.[k];
+              if (v !== undefined && v !== null && String(v).length > 0) return v as string;
+            }
+            return fallback;
+          };
+
+          const name = get(c, ["name", "companyName"]);
+          const phone = get(c, ["phone", "phoneNumber", "contactNumber"]);
+          const websiteVal = get(c, ["website", "site", "url", "homePage"]);
+          const addressVal = get(c, ["address", "addressLine", "location", "street"], "");
+          const countryVal = get(c, ["country", "countryCode", "country_name", "countryName"], "");
+          const logo = get(c, ["logoUrl", "logoURL", "logo", "image", "avatar", "avatarUrl"], "");
+
+          setCompanyName(name);
+          setContactNumber(phone);
+          setWebsite(websiteVal);
+          if (addressVal) setCompanyAddress(addressVal);
+
+          if (countryVal) {
+            const apiCountry = String(countryVal).toLowerCase();
+            const match = countries.find(cn => cn.label.toLowerCase() === apiCountry || cn.value.toLowerCase() === apiCountry);
+            if (match) setCompanyCountry(match.value);
+          }
+
+          if (logo) setLogoPreview(logo);
+        }
+      } catch (e) {
+        console.error("Failed to fetch company", e);
+      }
+    };
+    if (active === "company" && user?.role === "company_admin") {
+      fetchCompany();
+    }
+  }, [active, user?.role]);
 
   // Keep inputs in sync when user data arrives/changes
   useEffect(() => {
@@ -190,6 +260,7 @@ export default function SettingsPage() {
   };
 
   const handleCompanySave = async () => {
+    if (user?.role !== "company_admin") return; // Hard gate on action
     // Basic validation and normalization
     if (!companyName?.trim()) {
       setErrorMessage("Company name is required.");
@@ -337,7 +408,7 @@ export default function SettingsPage() {
         <Tabs tabs={tabs} value={active} onChange={setActive} fullWidth />
       </div>
 
-      {active === "company" && (
+      {active === "company" && user?.role === "company_admin" && (
         <div className="mt-6 space-y-6">
           {/* Company Information */}
           <Card title="Company Information">

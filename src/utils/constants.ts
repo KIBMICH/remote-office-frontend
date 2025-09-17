@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
     AVATAR: "users/avatar", // PATCH multipart/form-data
   },
   COMPANY: {
+    GET: "company", // GET - role-based: superadmin gets all, others get own company
     UPDATE: "company/update", // PUT
     LOGO: "company/logo", // PATCH multipart/form-data
   },

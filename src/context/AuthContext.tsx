@@ -19,6 +19,8 @@ interface User {
   status?: string;
   country?: string;
   address?: string;
+  role?: string;
+  companyId?: string;
 }
 
 interface AuthContextType {
@@ -72,6 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             status: profileData.status as string,
             country: profileData.country as string,
             address: profileData.address as string,
+            role: profileData.role as string,
+            companyId: (profileData.companyId as string) || (typeof profile.company === 'object' && profile.company ? (profile.company as Record<string, unknown>).id as string : undefined),
           };
           setUser(normalized);
         }
@@ -120,6 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               status: profileData.status as string,
               country: profileData.country as string,
               address: profileData.address as string,
+              role: profileData.role as string,
+              companyId: (profileData.companyId as string) || (typeof profile.company === 'object' && profile.company ? (profile.company as Record<string, unknown>).id as string : undefined),
             };
             console.log('Setting complete user profile after login:', normalized);
             setUser(normalized);
