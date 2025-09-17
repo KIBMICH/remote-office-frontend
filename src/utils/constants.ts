@@ -1,36 +1,37 @@
 // API Configuration
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: "api/auth/login",
-    REGISTER: "api/auth/register",
-    LOGOUT: "api/auth/logout",
-    VERIFY: "api/auth/verify",
-    GOOGLE: "api/auth/google",
+    LOGIN: "auth/login",
+    REGISTER: "auth/register",
+    LOGOUT: "auth/logout",
+    VERIFY: "auth/verify",
+    GOOGLE: "auth/google",
   },
   USER: {
-    PROFILE: "api/user/profile",
-    UPDATE: "api/user/update",
+    PROFILE: "user/profile",
+    UPDATE: "user/update",
   },
   // Additional explicit endpoints used by Settings integrations
   USERS: {
-    UPDATE: "api/users/update", // PUT
-    AVATAR: "api/users/avatar", // PATCH multipart/form-data
+    UPDATE: "users/update", // PUT
+    AVATAR: "users/avatar", // PATCH multipart/form-data
   },
   COMPANY: {
-    UPDATE: "api/company/update", // PUT
-    LOGO: "api/company/logo", // PATCH multipart/form-data
+    GET: "company", // GET - role-based: superadmin gets all, others get own company
+    UPDATE: "company/update", // PUT
+    LOGO: "company/logo", // PATCH multipart/form-data
   },
   TEAM: {
-    LIST: "api/teams",
-    CREATE: "api/teams",
-    UPDATE: "api/teams/:id",
-    DELETE: "api/teams/:id",
+    LIST: "teams",
+    CREATE: "teams",
+    UPDATE: "teams/:id",
+    DELETE: "teams/:id",
   },
   PROJECT: {
-    LIST: "api/projects",
-    CREATE: "api/projects",
-    UPDATE: "api/projects/:id",
-    DELETE: "api/projects/:id",
+    LIST: "projects",
+    CREATE: "projects",
+    UPDATE: "projects/:id",
+    DELETE: "projects/:id",
   },
 } as const;
 

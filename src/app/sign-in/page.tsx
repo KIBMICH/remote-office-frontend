@@ -15,7 +15,7 @@ import { useAuthContext } from "@/context/AuthContext";
 export default function SignInPage() {
   const router = useRouter();
   const { success: toastSuccess } = useToast();
-  const { setUser } = useAuthContext();
+  const { login } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,35 +47,17 @@ export default function SignInPage() {
     setError(null);
     setLoading(true);
     try {
-      const res = await authService.login({ email, password });
-      if (res?.token) {
-        localStorage.setItem("token", res.token);
-      }
-  
-      type RawUser = { 
-        _id?: { $oid?: string } | string; 
-        id?: string; 
-        email?: string; 
-        name?: string; 
-        company?: { _id?: string; $oid?: string } | string;
-        companyId?: string;
-      };
-      const rawUser = (res as unknown as { user?: RawUser })?.user;
-      if (rawUser) {
-        const normalized = {
-          id: (typeof rawUser._id === 'object' ? rawUser._id?.$oid : rawUser._id) ?? rawUser.id ?? "",
-          email: rawUser.email ?? "",
-          name: rawUser.name,
-          company: rawUser.company,
-        };
-        try {
-          setUser(normalized);
-        } catch {}
-      }
+      // Use AuthContext login method which handles profile data fetching
+      const res = await login(email, password);
+      
       toastSuccess("Login successful! Redirecting...");
       await new Promise((r) => setTimeout(r, 1000));
-      type LoginRes = { companyId?: string; company?: { _id?: string; $oid?: string } | string };
+      
+      // Extract company information for routing
+      type LoginRes = { companyId?: string; company?: { _id?: string; $oid?: string } | string; user?: { company?: unknown; companyId?: string } };
       const r = res as unknown as LoginRes;
+      const rawUser = r?.user;
+      
       const extractId = (val: unknown): string | null => {
         if (!val) return null;
         if (typeof val === 'string') return val;
@@ -85,12 +67,14 @@ export default function SignInPage() {
         }
         return null;
       };
+      
       const companyId =
         extractId(rawUser?.company) ??
         rawUser?.companyId ??
         r?.companyId ??
         extractId(r?.company) ??
         null;
+        
       if (companyId) {
         router.push("/dashboard");
       } else {

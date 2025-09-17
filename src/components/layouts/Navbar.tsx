@@ -3,13 +3,19 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAuthContext } from "@/context/AuthContext";
+import Avatar from "@/components/ui/Avatar";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { isAuthenticated } = useAuthContext();
+  const { isAuthenticated, user } = useAuthContext();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  // Determine navigation destination based on company ID
+  const getProfileDestination = () => {
+    return user?.company ? '/settings' : '/job-marketplace';
   };
 
   return (
@@ -58,9 +64,15 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated ? (
               // Show profile avatar when authenticated
-              <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                U
-              </div>
+              <Link href={getProfileDestination()} className="hover:opacity-80 transition-opacity">
+                <Avatar 
+                  src={user?.avatarUrl}
+                  alt="Profile"
+                  fallback={user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                  size="sm"
+                  className="hover:ring-2 hover:ring-blue-500 transition-all"
+                />
+              </Link>
             ) : (
               // Default: show Sign In / Sign Up links
               <>
@@ -146,9 +158,15 @@ export default function Navbar() {
               <div className="w-8 h-8 text-gray-300" />
             </div>
             {isAuthenticated ? (
-              <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                U
-              </div>
+              <Link href={getProfileDestination()} className="hover:opacity-80 transition-opacity" onClick={() => setIsMenuOpen(false)}>
+                <Avatar 
+                  src={user?.avatarUrl}
+                  alt="Profile"
+                  fallback={user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                  size="sm"
+                  className="hover:ring-2 hover:ring-blue-500 transition-all"
+                />
+              </Link>
             ) : (
               <div className="flex items-center gap-3">
                 <Link href="/sign-in" className="px-3 py-2 text-sm rounded-lg border border-gray-700 text-gray-200 hover:bg-gray-800 transition-colors" onClick={() => setIsMenuOpen(false)}>
