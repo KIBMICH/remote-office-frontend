@@ -12,4 +12,9 @@ export interface Task {
   dueDate: string; // ISO date
   priority: Priority;
   status: TaskStatus;
+  project?: {
+    id: string;
+    name: string;
+  };
+  tags?: string[];
 }
