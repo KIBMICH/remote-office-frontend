@@ -8,7 +8,15 @@ import type { Priority, TaskStatus } from "@/types/project";
 interface AddTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onTaskCreated?: (task: any) => void;
+  onTaskCreated?: (task: {
+    id: string;
+    title: string;
+    description: string;
+    assignee: { name: string };
+    dueDate: string;
+    priority: Priority;
+    status: TaskStatus;
+  }) => void;
 }
 
 export default function AddTaskModal({ isOpen, onClose, onTaskCreated }: AddTaskModalProps) {
