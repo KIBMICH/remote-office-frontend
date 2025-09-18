@@ -105,34 +105,56 @@ export default function ProjectsPage() {
 
   return (
     <section className="space-y-6">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-semibold">Project Tasks</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="text-gray-300 border-gray-700 hover:bg-gray-800 gap-2" size="sm">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold">Project Tasks</h1>
+        <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto overflow-x-auto">
+          <Button 
+            variant="outline" 
+            className="text-gray-300 border-gray-700 hover:bg-gray-800 gap-1 sm:gap-2 flex-shrink-0 min-w-0" 
+            size="sm"
+            title="All Tasks"
+          >
+            <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
               <path d="M3 6h14" />
               <path d="M3 12h10" />
               <path d="M3 18h6" />
             </svg>
-            <span>All Tasks</span>
+            <span className="hidden sm:inline whitespace-nowrap">All Tasks</span>
           </Button>
-          <Button variant="outline" className="text-gray-300 border-gray-700 hover:bg-gray-800 gap-2" size="sm">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+          <Button 
+            variant="outline" 
+            className="text-gray-300 border-gray-700 hover:bg-gray-800 gap-1 sm:gap-2 flex-shrink-0 min-w-0" 
+            size="sm"
+            title="My Tasks"
+          >
+            <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
               <circle cx="12" cy="8" r="3" />
               <path d="M6 20a6 6 0 0 1 12 0" />
             </svg>
-            <span>My Tasks</span>
+            <span className="hidden sm:inline whitespace-nowrap">My Tasks</span>
           </Button>
-          <Button variant="outline" className="text-gray-300 border-gray-700 hover:bg-gray-800 gap-2" size="sm">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+          <Button 
+            variant="outline" 
+            className="text-gray-300 border-gray-700 hover:bg-gray-800 gap-1 sm:gap-2 flex-shrink-0 min-w-0" 
+            size="sm"
+            title="Sort By"
+          >
+            <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
               <path d="M3 6h18" />
               <path d="M7 12h14" />
               <path d="M11 18h10" />
             </svg>
-            <span>Sort By</span>
+            <span className="hidden sm:inline whitespace-nowrap">Sort By</span>
           </Button>
-          <Link href="/projects/create">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white" size="sm">+ Add Task</Button>
+          <Link href="/projects/create" className="flex-shrink-0">
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700 text-white gap-1 sm:gap-2 min-w-0" 
+              size="sm"
+              title="Add Task"
+            >
+              <span className="text-lg leading-none">+</span>
+              <span className="hidden sm:inline whitespace-nowrap">Add Task</span>
+            </Button>
           </Link>
         </div>
       </header>
