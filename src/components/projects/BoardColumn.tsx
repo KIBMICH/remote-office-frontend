@@ -9,7 +9,7 @@ type Props = {
   tasks: ReadonlyArray<Task>;
 };
 
-export default function BoardColumn({ title, status, tasks }: Props) {
+export default function BoardColumn({ title, tasks }: Props) {
   return (
     <div className="min-w-[320px] w-full space-y-4">
       <Card className="bg-gray-900/70 border-gray-800">

@@ -1,19 +1,18 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import AuthTabs from "@/components/auth/AuthTabs";
 import AuthCard from "@/components/auth/AuthCard";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import authService from "@/services/authService";
+import { useRouter, useSearchParams } from "next/navigation";
 import Spinner from "@/components/ui/Spinner";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useAuthContext } from "@/context/AuthContext";
 
-
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { success: toastSuccess } = useToast();
   const { login } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
@@ -75,8 +74,11 @@ export default function SignInPage() {
         extractId(r?.company) ??
         null;
         
+      // Get redirect URL from search params or default based on company
+      const redirectUrl = searchParams.get('redirect');
+      
       if (companyId) {
-        router.push("/dashboard");
+        router.push(redirectUrl || "/dashboard");
       } else {
         router.push("/job-marketplace");
       }
@@ -216,5 +218,26 @@ export default function SignInPage() {
         </p>
       </AuthCard>
     </main>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-black flex flex-col items-center pt-10">
+        <div className="w-24 h-24 rounded-md overflow-hidden mb-0 shadow-lg">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/signup_logo.png" alt="RemoteHub" className="w-full h-full object-cover bg-black" />
+        </div>
+        <AuthTabs />
+        <AuthCard title="Welcome Back" subtitle="Sign in to your RemoteHub account">
+          <div className="flex justify-center py-8">
+            <Spinner size={24} />
+          </div>
+        </AuthCard>
+      </main>
+    }>
+      <SignInForm />
+    </Suspense>
   );
 }
