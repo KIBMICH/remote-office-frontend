@@ -1,8 +1,9 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import BoardColumn from "@/components/projects/BoardColumn";
+import AddTaskModal from "@/components/projects/AddTaskModal";
 import type { Task } from "@/types/project";
 
 const MOCK_TASKS: Task[] = [
@@ -99,15 +100,36 @@ const MOCK_TASKS: Task[] = [
 ];
 
 export default function ProjectsPage() {
-  const todo = MOCK_TASKS.filter((t) => t.status === "todo");
-  const inProgress = MOCK_TASKS.filter((t) => t.status === "in_progress");
-  const done = MOCK_TASKS.filter((t) => t.status === "done");
+  const [tasks, setTasks] = useState(MOCK_TASKS);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const todo = tasks.filter((t) => t.status === "todo");
+  const inProgress = tasks.filter((t) => t.status === "in_progress");
+  const done = tasks.filter((t) => t.status === "done");
+
+  const handleTaskCreated = (newTask: Task) => {
+    setTasks(prev => [...prev, newTask]);
+  };
 
   return (
     <section className="space-y-6">
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold">Project Tasks</h1>
         <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto overflow-x-auto">
+        <Link href="/projects/task-list" className="flex-shrink-0">
+            <Button 
+              variant="outline" 
+              className="text-gray-300 border-gray-700 hover:bg-gray-800 gap-1 sm:gap-2 flex-shrink-0 min-w-0" 
+              size="sm"
+              title="Task List"
+            >
+              <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M9 12l2 2 4-4" />
+                <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.12 0 4.07.74 5.61 1.98" />
+              </svg>
+              <span className="hidden sm:inline whitespace-nowrap">Task List</span>
+            </Button>
+          </Link>
           <Button 
             variant="outline" 
             className="text-gray-300 border-gray-700 hover:bg-gray-800 gap-1 sm:gap-2 flex-shrink-0 min-w-0" 
@@ -133,6 +155,7 @@ export default function ProjectsPage() {
             </svg>
             <span className="hidden sm:inline whitespace-nowrap">My Tasks</span>
           </Button>
+          
           <Button 
             variant="outline" 
             className="text-gray-300 border-gray-700 hover:bg-gray-800 gap-1 sm:gap-2 flex-shrink-0 min-w-0" 
@@ -146,16 +169,7 @@ export default function ProjectsPage() {
             </svg>
             <span className="hidden sm:inline whitespace-nowrap">Sort By</span>
           </Button>
-          <Link href="/projects/create" className="flex-shrink-0">
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700 text-white gap-1 sm:gap-2 min-w-0" 
-              size="sm"
-              title="Add Task"
-            >
-              <span className="text-lg leading-none">+</span>
-              <span className="hidden sm:inline whitespace-nowrap">Add Task</span>
-            </Button>
-          </Link>
+         
         </div>
       </header>
 
@@ -164,6 +178,13 @@ export default function ProjectsPage() {
         <BoardColumn title="In Progress" status="in_progress" tasks={inProgress} />
         <BoardColumn title="Done" status="done" tasks={done} />
       </div>
+
+      {/* Add Task Modal */}
+      <AddTaskModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onTaskCreated={handleTaskCreated}
+      />
     </section>
   );
 }
