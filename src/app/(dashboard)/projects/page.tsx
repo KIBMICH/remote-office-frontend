@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import Link from "next/link";
 import Button from "@/components/ui/Button";
 import BoardColumn from "@/components/projects/BoardColumn";
 import type { Task } from "@/types/project";
@@ -130,7 +131,9 @@ export default function ProjectsPage() {
             </svg>
             <span>Sort By</span>
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white" size="sm">+ Add Task</Button>
+          <Link href="/projects/create">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white" size="sm">+ Add Task</Button>
+          </Link>
         </div>
       </header>
 
