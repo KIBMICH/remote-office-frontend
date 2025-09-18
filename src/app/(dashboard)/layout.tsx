@@ -3,9 +3,9 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 
-export default function SettingsLayout({ children }: { children: React.ReactNode }) {
-  const [mobileOpen, setMobileOpen] = useState(false); // drawer slide state
-  const [overlayVisible, setOverlayVisible] = useState(false); // mount/unmount overlay
+export default function DashboardGroupLayout({ children }: { children: React.ReactNode }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [overlayVisible, setOverlayVisible] = useState(false);
 
   const openMenu = () => {
     setOverlayVisible(true);
@@ -23,6 +23,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
     if (overlayVisible) window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [overlayVisible]);
+
   return (
     <div className="min-h-screen bg-black text-gray-100">
       <DashboardHeader onMenuClick={openMenu} />
@@ -36,6 +37,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
           </main>
         </div>
       </div>
+
       {overlayVisible && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div
