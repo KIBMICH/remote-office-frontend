@@ -41,7 +41,7 @@ export default function SettingsPage() {
   const { user, isAuthenticated, setUser, loading } = useAuthContext();
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Default to Profile tab; we'll enable Company for company_admin only
+  // Default to Profile tab; Company tab is available for company_admin users
   const [active, setActive] = useState("profile");
   const [domain, setDomain] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -71,7 +71,7 @@ export default function SettingsPage() {
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Tabs are role-based: show Company only for company_admin
+  // Tabs configuration: Company tab only visible to company_admin, Profile tab available to all
   const tabs = useMemo(() => {
     const base = [
       { key: "profile", label: "Profile" },
@@ -84,14 +84,8 @@ export default function SettingsPage() {
     return base;
   }, [user?.role]);
 
-  // If user becomes company_admin and current tab is not company, optionally switch once
-  useEffect(() => {
-    if (user?.role === "company_admin" && active !== "company") {
-      // Keep the user's currently selected tab if they changed it; otherwise default to company
-      // We only set to company on first load when active is still profile and fields are empty
-      setActive((prev) => (prev === "profile" ? "company" : prev));
-    }
-  }, [user?.role, active]);
+  // Company admins can access both Company and Profile tabs
+  // No automatic tab switching - let them choose which tab they want to view
 
   // Function to populate profile fields from user data
   const populateProfileFields = useCallback((userData?: typeof user) => {
