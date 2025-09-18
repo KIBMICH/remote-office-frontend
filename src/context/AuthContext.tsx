@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { getAuthToken } from "@/utils/auth";
+import { useAuth } from "@/hooks/useAuth";
 import api from "../utils/api";
 
 interface User {
@@ -41,14 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check if user is already logged in
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     const fetchProfile = async () => {
       try {
         if (!token) {
           console.log('No token found, skipping profile fetch');
           return;
         }
-        console.log('Token found, fetching profile...');
+        
         const res = await api.get('users/me');
         type RawId = string | { $oid?: string } | undefined;
         type RawProfile = { _id?: RawId; id?: string; email: string; name?: string; company?: unknown };

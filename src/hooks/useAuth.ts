@@ -1,5 +1,6 @@
 import { useState } from "react";
-import api from "../utils/api";
+import api from "@/utils/api";
+import { setAuthToken, removeAuthToken } from "@/utils/auth";
 import { LoginResponse } from "../types";
 
 export const useAuth = () => {
@@ -10,7 +11,7 @@ export const useAuth = () => {
     try {
       const res = await api.post<LoginResponse>("/auth/login", { email, password });
       const data = res.data as LoginResponse;
-      localStorage.setItem("token", data.token);
+      setAuthToken(data.token);
       return data;
     } finally {
       setLoading(false);
@@ -18,7 +19,7 @@ export const useAuth = () => {
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    removeAuthToken();
   };
 
   return { login, logout, loading };

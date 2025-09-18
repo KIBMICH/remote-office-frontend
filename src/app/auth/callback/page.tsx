@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/utils/api";
 import { API_ENDPOINTS } from "@/utils/constants";
 import { useAuthContext } from "@/context/AuthContext";
+import { setAuthToken } from "@/utils/auth";
 import Spinner from "@/components/ui/Spinner";
 
 function AuthCallbackCore() {
@@ -47,7 +48,7 @@ function AuthCallbackCore() {
                 
                 // Otherwise, handle normally (non-popup)
                 token = data.token;
-                localStorage.setItem("token", token!);
+                setAuthToken(token!);
 
                 const normalized = {
                   id: data.user.id || "",
@@ -86,7 +87,7 @@ function AuthCallbackCore() {
         }
 
         // Standard token processing
-        localStorage.setItem("token", token);
+        setAuthToken(token);
 
         // Fetch profile to populate context (with fallbacks to handle differing backend routes)
         type RawId = string | { $oid?: string } | undefined;
