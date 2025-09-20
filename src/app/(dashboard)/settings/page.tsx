@@ -107,7 +107,6 @@ export default function SettingsPage() {
       setLastName(userToUse.lastName);
     } else if (userToUse.name) {
       const parts = userToUse.name.split(" ");
-      console.log('Parsing name field - firstName:', parts[0], 'lastName:', parts.slice(1).join(" "));
       setFirstName(parts[0] || "");
       setLastName(parts.slice(1).join(" ") || "");
     }

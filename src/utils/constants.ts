@@ -27,11 +27,31 @@ export const API_ENDPOINTS = {
     UPDATE: "teams/:id",
     DELETE: "teams/:id",
   },
-  PROJECT: {
+  PROJECTS: {
     LIST: "projects",
     CREATE: "projects",
+    GET: "projects/:id",
     UPDATE: "projects/:id",
     DELETE: "projects/:id",
+    TASKS: "projects/:id/tasks",
+    ADD_MEMBERS: "projects/:id/members",
+    REMOVE_MEMBER: "projects/:id/members/:userId",
+  },
+  TASKS: {
+    LIST: "tasks",
+    CREATE: "tasks",
+    GET: "tasks/:id",
+    UPDATE: "tasks/:id",
+    DELETE: "tasks/:id",
+    UPDATE_STATUS: "tasks/:id/status",
+    MY_TASKS: "tasks/my-tasks",
+  },
+  DASHBOARD: {
+    STATS: "dashboard/stats",
+    ACTIVE_PROJECTS: "dashboard/active-projects",
+    TASK_ANALYTICS: "dashboard/task-analytics",
+    PROJECT_ANALYTICS: "dashboard/project-analytics",
+    TEAM_MEMBERS: "dashboard/team-members",
   },
 } as const;
 

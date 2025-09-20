@@ -3,29 +3,19 @@ import React, { useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useToast } from "@/components/ui/ToastProvider";
-import type { Priority, ProjectStatus } from "@/types/project";
+// Removed unused Priority and ProjectStatus imports
+import { projectService, type ProjectResponse } from "@/services/projectService";
+import { type TeamMember } from "@/services/dashboardService";
 
 interface AddProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProjectCreated?: (project: {
-    id: string;
-    name: string;
-    description: string;
-    status: ProjectStatus;
-    priority: Priority;
-    dueDate: string;
-    progress: number;
-    members: { id: string; name: string; avatarUrl?: string; }[];
-    taskCount: number;
-    completedTasks: number;
-    createdAt: string;
-    tags?: string[];
-  }) => void;
+  onProjectCreated?: (project: ProjectResponse) => void;
+  teamMembers?: TeamMember[];
 }
 
-export default function AddProjectModal({ isOpen, onClose, onProjectCreated }: AddProjectModalProps) {
-  const { success: toastSuccess } = useToast();
+export default function AddProjectModal({ isOpen, onClose, onProjectCreated, teamMembers = [] }: AddProjectModalProps) {
+  const { success: toastSuccess, error: toastError } = useToast();
 
   // Handle ESC key press
   React.useEffect(() => {
@@ -50,11 +40,8 @@ export default function AddProjectModal({ isOpen, onClose, onProjectCreated }: A
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    priority: "medium" as Priority,
-    status: "active" as ProjectStatus,
     dueDate: "",
-    members: [] as string[],
-    tags: ""
+    memberIds: [] as string[],
   });
 
   const [loading, setLoading] = useState(false);
@@ -66,46 +53,60 @@ export default function AddProjectModal({ isOpen, onClose, onProjectCreated }: A
     }));
   };
 
-  const handleMemberToggle = (memberName: string) => {
+  const handleMemberToggle = (memberId: string) => {
     setFormData(prev => ({
       ...prev,
-      members: prev.members.includes(memberName)
-        ? prev.members.filter(m => m !== memberName)
-        : [...prev.members, memberName]
+      memberIds: prev.memberIds.includes(memberId)
+        ? prev.memberIds.filter(id => id !== memberId)
+        : [...prev.memberIds, memberId]
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form data
+    if (!formData.name.trim()) {
+      toastError("Project name is required");
+      return;
+    }
+    
+    if (!formData.description.trim()) {
+      toastError("Project description is required");
+      return;
+    }
+    
+    if (!formData.dueDate) {
+      toastError("Due date is required");
+      return;
+    }
+    
     setLoading(true);
     
     try {
-      // TODO: Implement actual API call to create project
-      console.log("Creating project:", formData);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Format the date to match API spec: "2024-12-31T23:59:59Z"
+      const dateObj = new Date(formData.dueDate + "T23:59:59Z");
+      const isoDateWithTime = dateObj.toISOString();
       
-      // Create project object to pass back
-      const newProject = {
-        id: Date.now().toString(),
-        name: formData.name,
-        description: formData.description,
-        status: formData.status,
-        priority: formData.priority,
-        dueDate: formData.dueDate,
-        progress: 0,
-        members: formData.members.map((name, index) => ({
-          id: `member_${index + 1}`,
-          name,
-          avatarUrl: ""
-        })),
-        taskCount: 0,
-        completedTasks: 0,
-        createdAt: new Date().toISOString().split('T')[0],
-        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : []
+      
+      // Create payload matching the API specification exactly
+      const payload = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        dueDate: isoDateWithTime,
+        memberIds: teamMembers.length > 0 ? formData.memberIds : []
       };
       
+      
+      
+    
+      
+      // Create project using API with correct format
+      
+      const newProject = await projectService.createProject(payload);
+      
+   
       toastSuccess("Project created successfully!");
       
       // Call the callback if provided
@@ -117,16 +118,28 @@ export default function AddProjectModal({ isOpen, onClose, onProjectCreated }: A
       setFormData({
         name: "",
         description: "",
-        priority: "medium",
-        status: "active",
         dueDate: "",
-        members: [],
-        tags: ""
+        memberIds: []
       });
       
       onClose();
-    } catch (error) {
-      console.error("Error creating project:", error);
+    } catch (error: unknown) {
+      console.error("AddProjectModal: Error creating project:", error);
+      
+      let errorMessage = "Failed to create project. Please try again.";
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string; error?: string }; status?: number } };
+        console.error("AddProjectModal: Error response:", axiosError.response?.data);
+        console.error("AddProjectModal: Error status:", axiosError.response?.status);
+        
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        } else if (axiosError.response?.data?.error) {
+          errorMessage = axiosError.response.data.error;
+        }
+      }
+      
+      toastError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -137,29 +150,13 @@ export default function AddProjectModal({ isOpen, onClose, onProjectCreated }: A
     setFormData({
       name: "",
       description: "",
-      priority: "medium",
-      status: "active",
       dueDate: "",
-      members: [],
-      tags: ""
+      memberIds: []
     });
     onClose();
   };
 
   if (!isOpen) return null;
-
-  const availableMembers = [
-    "Alice Chen",
-    "Bob Johnson", 
-    "Charlie Davis",
-    "David Lee",
-    "Eva Green",
-    "Frank Moore",
-    "Grace Hall",
-    "Henry King",
-    "Ivy Chen",
-    "Jack Wilson"
-  ];
 
   return (
     <div className="fixed inset-0 z-[9999] overflow-y-auto">
@@ -236,91 +233,69 @@ export default function AddProjectModal({ isOpen, onClose, onProjectCreated }: A
                 </div>
               </div>
 
-              {/* Project Settings Section */}
-              <div>
-                <h3 className="text-lg font-medium text-white mb-4">Project Settings</h3>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Priority
-                    </label>
-                    <select
-                      value={formData.priority}
-                      onChange={(e) => handleInputChange("priority", e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Status
-                    </label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => handleInputChange("status", e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="active">Active</option>
-                      <option value="on_hold">On Hold</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Tags
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder="Add tags (comma separated)"
-                      value={formData.tags}
-                      onChange={(e) => handleInputChange("tags", e.target.value)}
-                      className="bg-gray-900 border-gray-600 text-white placeholder-gray-400"
-                    />
-                  </div>
-                </div>
-              </div>
 
               {/* Team Members Section */}
               <div>
                 <h3 className="text-lg font-medium text-white mb-4">Team Members</h3>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {availableMembers.map((member) => (
-                    <label
-                      key={member}
-                      className="flex items-center space-x-2 p-3 bg-gray-900 border border-gray-600 rounded-md cursor-pointer hover:bg-gray-800 transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.members.includes(member)}
-                        onChange={() => handleMemberToggle(member)}
-                        className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-                      />
-                      <span className="text-sm text-gray-300">{member}</span>
-                    </label>
-                  ))}
-                </div>
+                {/* Debug info */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mb-4 p-2 bg-yellow-900/20 border border-yellow-600 rounded text-yellow-300 text-xs">
+                  Team members count: {teamMembers.length}
+                  </div>
+                )}
                 
-                {formData.members.length > 0 && (
-                  <div className="mt-3 p-3 bg-gray-900 border border-gray-600 rounded-md">
-                    <p className="text-sm text-gray-300 mb-2">Selected members ({formData.members.length}):</p>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.members.map((member) => (
-                        <span
-                          key={member}
-                          className="px-2 py-1 bg-blue-600 text-blue-100 text-xs rounded-full"
-                        >
-                          {member}
-                        </span>
-                      ))}
+                {teamMembers.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {teamMembers.map((member) => {
+                        const memberId = member.id || member._id;
+                        if (!memberId) return null; // Skip members without valid ID
+                        
+                        return (
+                          <label
+                            key={memberId}
+                            className="flex items-center space-x-2 p-3 bg-gray-900 border border-gray-600 rounded-md cursor-pointer hover:bg-gray-800 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.memberIds.includes(memberId)}
+                              onChange={() => handleMemberToggle(memberId)}
+                              className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm text-gray-300 block truncate">{member.name}</span>
+                              <span className="text-xs text-gray-400 block truncate">{member.email}</span>
+                            </div>
+                          </label>
+                        );
+                      })}
                     </div>
+                    
+                    {formData.memberIds.length > 0 && (
+                      <div className="mt-3 p-3 bg-gray-900 border border-gray-600 rounded-md">
+                        <p className="text-sm text-gray-300 mb-2">Selected members ({formData.memberIds.length}):</p>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.memberIds.map((memberId) => {
+                            const member = teamMembers.find(m => (m.id || m._id) === memberId);
+                            return member ? (
+                              <span
+                                key={memberId}
+                                className="px-2 py-1 bg-blue-600 text-blue-100 text-xs rounded-full"
+                              >
+                                {member.name}
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="p-4 bg-gray-900 border border-gray-600 rounded-md">
+                    <p className="text-gray-400 text-sm">
+                      No team members available. You can create the project without assigning members and add them later.
+                    </p>
                   </div>
                 )}
               </div>
