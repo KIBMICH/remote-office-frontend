@@ -116,6 +116,20 @@ export default function ProjectsPage() {
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold">Project Tasks</h1>
         <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto overflow-x-auto">
+        <Link href="/projects/project-list" className="flex-shrink-0">
+            <Button 
+              variant="outline" 
+              className="text-gray-300 border-gray-700 hover:bg-gray-800 gap-1 sm:gap-2 flex-shrink-0 min-w-0" 
+              size="sm"
+              title="Project List"
+            >
+              <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                <path d="M8 21v-4a2 2 0 012-2h4a2 2 0 012 2v4" />
+              </svg>
+              <span className="hidden sm:inline whitespace-nowrap">Project List</span>
+            </Button>
+          </Link>
         <Link href="/projects/task-list" className="flex-shrink-0">
             <Button 
               variant="outline" 
