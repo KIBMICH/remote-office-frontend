@@ -1,9 +1,12 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import AddProjectModal from "@/components/projects/AddProjectModal";
+import EditProjectMembersModal from "@/components/projects/EditProjectMembersModal";
 import type { Project } from "@/types/project";
+import { projectService, type ProjectResponse, type ProjectFilters } from "@/services/projectService";
+import { dashboardService } from "@/services/dashboardService";
 
 const MOCK_PROJECTS: Project[] = [
   {
@@ -144,22 +147,141 @@ const getProgressColor = (progress: number) => {
   return "bg-red-500";
 };
 
+const formatDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return dateString; // Return original if formatting fails
+  }
+};
+
 export default function ProjectListPage() {
-  const [projects, setProjects] = useState(MOCK_PROJECTS);
+  const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMembersModalOpen, setIsEditMembersModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<ProjectResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [filters, setFilters] = useState<ProjectFilters>({
+    page: 1,
+    limit: 10,
+    sortBy: "createdAt",
+    sortOrder: "desc"
+  });
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0
+  });
 
-  const handleStatusChange = (projectId: string, newStatus: string) => {
-    setProjects(projects.map(project => 
-      project.id === projectId ? { ...project, status: newStatus as Project['status'] } : project
+  // Fetch projects from API
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await projectService.getProjects(filters);
+      setProjects(response.projects);
+      setPagination({
+        total: response.total,
+        page: response.page,
+        limit: response.limit,
+        totalPages: response.totalPages
+      });
+    } catch (err) {
+      console.error("Failed to fetch projects:", err);
+      setError("Failed to load projects. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch team members for project creation
+  const fetchTeamMembers = async () => {
+    try {
+      console.log("Fetching team members...");
+      const members = await dashboardService.getTeamMembers();
+      console.log("Team members fetched:", members);
+      setTeamMembers(members);
+    } catch (err) {
+      console.error("Failed to fetch team members:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+    fetchTeamMembers();
+  }, []);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [filters]);
+
+  const handleStatusChange = async (projectId: string, newStatus: string) => {
+    try {
+      await projectService.updateProject(projectId, { 
+        status: newStatus as ProjectResponse['status'] 
+      });
+      
+      // Update local state
+      setProjects(projects.map(project => 
+        project.id === projectId ? { ...project, status: newStatus as ProjectResponse['status'] } : project
+      ));
+    } catch (err) {
+      console.error("Failed to update project status:", err);
+      setError("Failed to update project status. Please try again.");
+    }
+  };
+
+  const handleDelete = async (projectId: string) => {
+    if (!confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      await projectService.deleteProject(projectId);
+      setProjects(projects.filter(project => project.id !== projectId));
+    } catch (err) {
+      console.error("Failed to delete project:", err);
+      setError("Failed to delete project. Please try again.");
+    }
+  };
+
+  const handleProjectCreated = (newProject: ProjectResponse) => {
+    setProjects(prev => [newProject, ...prev]);
+    setIsModalOpen(false);
+  };
+
+  const handleEditMembers = (project: ProjectResponse) => {
+    setSelectedProject(project);
+    setIsEditMembersModalOpen(true);
+  };
+
+  const handleMembersUpdated = (updatedProject: ProjectResponse) => {
+    setProjects(prev => prev.map(project => 
+      project.id === updatedProject.id ? updatedProject : project
     ));
+    setIsEditMembersModalOpen(false);
+    setSelectedProject(null);
   };
 
-  const handleDelete = (projectId: string) => {
-    setProjects(projects.filter(project => project.id !== projectId));
+  const handleCloseEditMembers = () => {
+    setIsEditMembersModalOpen(false);
+    setSelectedProject(null);
   };
 
-  const handleProjectCreated = (newProject: Project) => {
-    setProjects(prev => [...prev, newProject]);
+  const handleFilterChange = (newFilters: Partial<ProjectFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setFilters(prev => ({ ...prev, page: newPage }));
   };
 
   return (
@@ -186,19 +308,35 @@ export default function ProjectListPage() {
         </div>
       </header>
 
-      {/* Table */}
-      <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading ? (
+        <div className="bg-gray-900 rounded-lg border border-gray-800 p-8">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <span className="ml-3 text-gray-300">Loading projects...</span>
+          </div>
+        </div>
+      ) : (
+        /* Table */
+        <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px]">
+          <table className="w-full min-w-[1200px]">
             <thead className="bg-gray-800 border-b border-gray-700">
               <tr>
-                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300">Project</th>
-                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 hidden lg:table-cell">Members</th>
-                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 hidden md:table-cell">Progress</th>
-                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 hidden sm:table-cell">Due Date</th>
-                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300">Priority</th>
-                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300">Status</th>
-                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300">Actions</th>
+                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 w-[30%]">Project</th>
+                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 hidden lg:table-cell w-[15%]">Members</th>
+                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 hidden md:table-cell w-[15%]">Progress</th>
+                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 hidden sm:table-cell w-[12%]">Due Date</th>
+                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 w-[8%]">Priority</th>
+                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 w-[10%]">Status</th>
+                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 w-[10%]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
@@ -215,7 +353,7 @@ export default function ProjectListPage() {
                         <div className="text-xs text-gray-400">
                           Tasks: <span className="text-gray-300">{project.completedTasks}/{project.taskCount}</span>
                         </div>
-                        <div className="text-xs text-gray-400">Due: <span className="text-gray-300">{project.dueDate}</span></div>
+                        <div className="text-xs text-gray-400">Due: <span className="text-gray-300">{formatDate(project.dueDate)}</span></div>
                       </div>
                     </div>
                   </td>
@@ -223,7 +361,7 @@ export default function ProjectListPage() {
                     <div className="flex -space-x-2">
                       {project.members.slice(0, 3).map((member, index) => (
                         <div
-                          key={member.id}
+                          key={member.id || `member-${project.id}-${index}`}
                           className="w-8 h-8 rounded-full bg-gray-600 border-2 border-gray-900 flex items-center justify-center text-xs font-medium text-white"
                           title={member.name}
                         >
@@ -231,7 +369,10 @@ export default function ProjectListPage() {
                         </div>
                       ))}
                       {project.members.length > 3 && (
-                        <div className="w-8 h-8 rounded-full bg-gray-700 border-2 border-gray-900 flex items-center justify-center text-xs font-medium text-gray-300">
+                        <div 
+                          key={`extra-members-${project.id}`}
+                          className="w-8 h-8 rounded-full bg-gray-700 border-2 border-gray-900 flex items-center justify-center text-xs font-medium text-gray-300"
+                        >
                           +{project.members.length - 3}
                         </div>
                       )}
@@ -251,10 +392,10 @@ export default function ProjectListPage() {
                       {project.completedTasks}/{project.taskCount} tasks
                     </div>
                   </td>
-                  <td className="py-3 sm:py-4 px-3 sm:px-6 text-gray-300 text-sm hidden sm:table-cell">{project.dueDate}</td>
+                  <td className="py-3 sm:py-4 px-3 sm:px-6 text-gray-300 text-sm hidden sm:table-cell">{formatDate(project.dueDate)}</td>
                   <td className="py-3 sm:py-4 px-3 sm:px-6">
-                    <span className={`capitalize text-xs sm:text-sm font-medium ${getPriorityColor(project.priority)}`}>
-                      {project.priority}
+                    <span className={`capitalize text-xs sm:text-sm font-medium ${getPriorityColor(project.priority || "medium")}`}>
+                      {project.priority || "medium"}
                     </span>
                   </td>
                   <td className="py-3 sm:py-4 px-3 sm:px-6">
@@ -276,6 +417,7 @@ export default function ProjectListPage() {
                         variant="outline"
                         size="sm"
                         className="text-gray-300 border-gray-600 hover:bg-gray-700 text-xs px-2 py-1"
+                        onClick={() => handleEditMembers(project)}
                       >
                         <span className="sm:hidden">✏️</span>
                         <span className="hidden sm:inline">Edit</span>
@@ -306,10 +448,11 @@ export default function ProjectListPage() {
             </tbody>
           </table>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Empty state if no projects */}
-      {projects.length === 0 && (
+      {!loading && projects.length === 0 && (
         <div className="text-center py-8 sm:py-12 px-4">
           <div className="text-gray-400 mb-4">
             <svg className="mx-auto h-10 sm:h-12 w-10 sm:w-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
@@ -333,6 +476,15 @@ export default function ProjectListPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onProjectCreated={handleProjectCreated}
+        teamMembers={teamMembers}
+      />
+
+      {/* Edit Project Members Modal */}
+      <EditProjectMembersModal
+        isOpen={isEditMembersModalOpen}
+        onClose={handleCloseEditMembers}
+        project={selectedProject}
+        onMembersUpdated={handleMembersUpdated}
       />
     </section>
   );

@@ -4,23 +4,20 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useToast } from "@/components/ui/ToastProvider";
 import type { Priority, TaskStatus } from "@/types/project";
+import { taskService, type TaskResponse } from "@/services/taskService";
+import { type TeamMember } from "@/services/dashboardService";
+import { type ProjectResponse } from "@/services/projectService";
 
 interface AddTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onTaskCreated?: (task: {
-    id: string;
-    title: string;
-    description: string;
-    assignee: { name: string };
-    dueDate: string;
-    priority: Priority;
-    status: TaskStatus;
-  }) => void;
+  onTaskCreated?: (task: TaskResponse) => void;
+  teamMembers?: TeamMember[];
+  projects?: ProjectResponse[];
 }
 
-export default function AddTaskModal({ isOpen, onClose, onTaskCreated }: AddTaskModalProps) {
-  const { success: toastSuccess } = useToast();
+export default function AddTaskModal({ isOpen, onClose, onTaskCreated, teamMembers = [], projects = [] }: AddTaskModalProps) {
+  const { success: toastSuccess, error: toastError } = useToast();
 
   // Handle ESC key press
   React.useEffect(() => {
@@ -67,22 +64,28 @@ export default function AddTaskModal({ isOpen, onClose, onTaskCreated }: AddTask
     setLoading(true);
     
     try {
-      // TODO: Implement actual API call to create task
-      console.log("Creating task:", formData);
+      // Format the date to match API spec: "2024-12-31T23:59:59Z"
+      const dateObj = new Date(formData.dueDate + "T23:59:59Z");
+      const isoDateWithTime = dateObj.toISOString();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("AddTaskModal: Original date:", formData.dueDate);
+      console.log("AddTaskModal: ISO formatted date:", isoDateWithTime);
       
-      // Create task object to pass back
-      const newTask = {
-        id: Date.now().toString(),
+      // Create task using API
+      const payload = {
         title: formData.title,
         description: formData.description,
-        assignee: { name: formData.assignee },
-        dueDate: formData.dueDate,
+        assigneeId: formData.assignee || undefined,
+        dueDate: isoDateWithTime,
         priority: formData.priority,
         status: formData.status,
+        projectId: formData.project || undefined,
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : []
       };
+      
+      console.log("AddTaskModal: Creating task with payload:", payload);
+      
+      const newTask = await taskService.createTask(payload);
       
       toastSuccess("Task created successfully!");
       
@@ -104,8 +107,19 @@ export default function AddTaskModal({ isOpen, onClose, onTaskCreated }: AddTask
       });
       
       onClose();
-    } catch (error) {
-      console.error("Error creating task:", error);
+    } catch (error: any) {
+      console.error("AddTaskModal: Error creating task:", error);
+      console.error("AddTaskModal: Error response:", error.response?.data);
+      console.error("AddTaskModal: Error status:", error.response?.status);
+      
+      let errorMessage = "Failed to create task. Please try again.";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      toastError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -194,6 +208,13 @@ export default function AddTaskModal({ isOpen, onClose, onTaskCreated }: AddTask
               <div>
                 <h3 className="text-lg font-medium text-white mb-4">Assignment & Scheduling</h3>
                 
+                {/* Debug info */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mb-4 p-2 bg-yellow-900/20 border border-yellow-600 rounded text-yellow-300 text-xs">
+                    Debug: Team members: {teamMembers.length}, Projects: {projects.length}
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -203,15 +224,22 @@ export default function AddTaskModal({ isOpen, onClose, onTaskCreated }: AddTask
                       value={formData.assignee}
                       onChange={(e) => handleInputChange("assignee", e.target.value)}
                       className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
                     >
-                      <option value="">Select team member</option>
-                      <option value="Alice Chen">Alice Chen</option>
-                      <option value="Bob Johnson">Bob Johnson</option>
-                      <option value="Charlie Davis">Charlie Davis</option>
-                      <option value="David Lee">David Lee</option>
-                      <option value="Eva Green">Eva Green</option>
-                      <option value="Frank Moore">Frank Moore</option>
+                      <option value="">Select team member (optional)</option>
+                      {teamMembers.length > 0 ? (
+                        teamMembers.map((member) => {
+                          const memberId = member.id || member._id;
+                          if (!memberId) return null;
+                          
+                          return (
+                            <option key={memberId} value={memberId}>
+                              {member.name} ({member.email})
+                            </option>
+                          );
+                        })
+                      ) : (
+                        <option value="" disabled>No team members available</option>
+                      )}
                     </select>
                   </div>
 
@@ -276,11 +304,16 @@ export default function AddTaskModal({ isOpen, onClose, onTaskCreated }: AddTask
                       onChange={(e) => handleInputChange("project", e.target.value)}
                       className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="">Associate with a project</option>
-                      <option value="remote-office-platform">Remote Office Platform</option>
-                      <option value="user-authentication">User Authentication System</option>
-                      <option value="project-management">Project Management Module</option>
-                      <option value="team-collaboration">Team Collaboration Tools</option>
+                      <option value="">Associate with a project (optional)</option>
+                      {projects.length > 0 ? (
+                        projects.map((project) => (
+                          <option key={project.id} value={project.id}>
+                            {project.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>No projects available</option>
+                      )}
                     </select>
                   </div>
 

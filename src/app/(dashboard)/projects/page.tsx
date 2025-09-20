@@ -1,114 +1,99 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import BoardColumn from "@/components/projects/BoardColumn";
 import AddTaskModal from "@/components/projects/AddTaskModal";
 import type { Task } from "@/types/project";
+import { taskService, type TaskResponse, type TaskFilters } from "@/services/taskService";
+import { dashboardService } from "@/services/dashboardService";
 
-const MOCK_TASKS: Task[] = [
-  {
-    id: "1",
-    title: "Design new user onboarding flow",
-    description:
-      "Create wireframes and mockups for the new user onboarding experience, focusing on clarity and ease of use.",
-    assignee: { name: "Alice Chen" },
-    dueDate: "2024-09-15",
-    priority: "high",
-    status: "todo",
-  },
-  {
-    id: "2",
-    title: "Research competitor features",
-    description:
-      "Analyze key features of leading competitor platforms to identify gaps and opportunities.",
-    assignee: { name: "Bob Johnson" },
-    dueDate: "2024-09-10",
-    priority: "medium",
-    status: "todo",
-  },
-  {
-    id: "3",
-    title: "Refactor notification service",
-    description:
-      "Improve the existing notification service for better scalability, reliability, and real-time delivery.",
-    assignee: { name: "Charlie Davis" },
-    dueDate: "2024-09-22",
-    priority: "high",
-    status: "todo",
-  },
-  {
-    id: "4",
-    title: "Develop API endpoints for authentication",
-    description:
-      "Implement secure RESTful APIs for user registration, login, token generation, and refresh.",
-    assignee: { name: "David Lee" },
-    dueDate: "2024-09-20",
-    priority: "high",
-    status: "in_progress",
-  },
-  {
-    id: "5",
-    title: "Implement frontend login component",
-    description:
-      "Build the React component for user login, ensuring responsive design and integration with new auth APIs.",
-    assignee: { name: "Eva Green" },
-    dueDate: "2024-09-18",
-    priority: "medium",
-    status: "in_progress",
-  },
-  {
-    id: "6",
-    title: "Configure CI/CD pipeline",
-    description:
-      "Set up automated build, test, and deployment pipelines using GitHub Actions for continuous integration.",
-    assignee: { name: "Frank Moore" },
-    dueDate: "2024-09-25",
-    priority: "low",
-    status: "in_progress",
-  },
-  {
-    id: "7",
-    title: "Setup project repository",
-    description:
-      "Initialize the Git repository, configure branching strategy, and establish basic project structure.",
-    assignee: { name: "Grace Hall" },
-    dueDate: "2024-08-30",
-    priority: "low",
-    status: "done",
-  },
-  {
-    id: "8",
-    title: "Define initial data models",
-    description:
-      "Design database schemas for users, tasks, projects, and teams, including relationships and constraints.",
-    assignee: { name: "Henry King" },
-    dueDate: "2024-08-28",
-    priority: "medium",
-    status: "done",
-  },
-  {
-    id: "9",
-    title: "Create project documentation",
-    description:
-      "Write initial project documentation covering setup instructions, architecture overview, and code module descriptions.",
-    assignee: { name: "Ivy Chen" },
-    dueDate: "2024-08-25",
-    priority: "low",
-    status: "done",
-  },
-];
 
 export default function ProjectsPage() {
-  const [tasks, setTasks] = useState(MOCK_TASKS);
+  const [tasks, setTasks] = useState<TaskResponse[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  const todo = tasks.filter((t) => t.status === "todo");
-  const inProgress = tasks.filter((t) => t.status === "in_progress");
-  const done = tasks.filter((t) => t.status === "done");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [filters, setFilters] = useState<TaskFilters>({
+    page: 1,
+    limit: 50,
+    sortBy: "dueDate",
+    sortOrder: "asc"
+  });
 
-  const handleTaskCreated = (newTask: Task) => {
-    setTasks(prev => [...prev, newTask]);
+  // Fetch tasks from API
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await taskService.getTasks(filters);
+      setTasks(response.tasks);
+    } catch (err) {
+      console.error("Failed to fetch tasks:", err);
+      setError("Failed to load tasks. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch team members and projects for task creation
+  const fetchSupportingData = async () => {
+    try {
+      const membersData = await dashboardService.getTeamMembers();
+      setTeamMembers(membersData);
+    } catch (err) {
+      console.error("Failed to fetch supporting data:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+    fetchSupportingData();
+  }, []);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [filters]);
+
+  // Convert TaskResponse to Task format for BoardColumn component
+  const convertToTask = (taskResponse: TaskResponse): Task => ({
+    id: taskResponse.id,
+    title: taskResponse.title,
+    description: taskResponse.description,
+    assignee: taskResponse.assignee ? {
+      name: taskResponse.assignee.name,
+      avatarUrl: taskResponse.assignee.avatarUrl
+    } : { name: "Unassigned" },
+    dueDate: taskResponse.dueDate,
+    priority: taskResponse.priority,
+    status: taskResponse.status,
+    project: taskResponse.project,
+    tags: taskResponse.tags
+  });
+
+  const todo = tasks.filter((t) => t.status === "todo").map(convertToTask);
+  const inProgress = tasks.filter((t) => t.status === "in_progress").map(convertToTask);
+  const done = tasks.filter((t) => t.status === "done").map(convertToTask);
+
+  const handleTaskCreated = (newTask: TaskResponse) => {
+    setTasks(prev => [newTask, ...prev]);
+    setIsModalOpen(false);
+  };
+
+  const handleTaskStatusUpdate = async (taskId: string, newStatus: "todo" | "in_progress" | "done") => {
+    try {
+      await taskService.updateTaskStatus(taskId, { status: newStatus });
+      
+      // Update local state
+      setTasks(prev => prev.map(task => 
+        task.id === taskId ? { ...task, status: newStatus } : task
+      ));
+    } catch (err) {
+      console.error("Failed to update task status:", err);
+      setError("Failed to update task status. Please try again.");
+    }
   };
 
   return (
@@ -183,21 +168,59 @@ export default function ProjectsPage() {
             </svg>
             <span className="hidden sm:inline whitespace-nowrap">Sort By</span>
           </Button>
+          
+          <Button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white gap-1 sm:gap-2 flex-shrink-0 min-w-0" 
+            size="sm"
+            title="New Task"
+          >
+            <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            <span className="hidden sm:inline whitespace-nowrap">New Task</span>
+          </Button>
          
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <BoardColumn title="To Do" status="todo" tasks={todo} />
-        <BoardColumn title="In Progress" status="in_progress" tasks={inProgress} />
-        <BoardColumn title="Done" status="done" tasks={done} />
-      </div>
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+              <div className="animate-pulse">
+                <div className="h-6 bg-gray-700 rounded mb-4"></div>
+                <div className="space-y-3">
+                  <div className="h-20 bg-gray-800 rounded"></div>
+                  <div className="h-20 bg-gray-800 rounded"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <BoardColumn title="To Do" status="todo" tasks={todo} />
+          <BoardColumn title="In Progress" status="in_progress" tasks={inProgress} />
+          <BoardColumn title="Done" status="done" tasks={done} />
+        </div>
+      )}
 
       {/* Add Task Modal */}
       <AddTaskModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onTaskCreated={handleTaskCreated}
+        teamMembers={teamMembers}
+        projects={projects}
       />
     </section>
   );
