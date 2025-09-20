@@ -97,15 +97,14 @@ export const dashboardService = {
 
   // Get all team members
   getTeamMembers: async () => {
-    console.log("DashboardService: Fetching team members from /api/dashboard/team-members");
+    
     try {
       const { data } = await api.get<{ users: TeamMember[] }>("dashboard/team-members");
-      console.log("DashboardService: Team members response:", data);
+      
       
       // Extract the users array from the response
       const teamMembers = data.users || [];
-      console.log("DashboardService: Extracted team members:", teamMembers);
-      console.log("DashboardService: Team members count:", teamMembers.length);
+    
       
       // Transform the data to match our expected format (id instead of _id)
       const transformedMembers = teamMembers.map(member => ({
@@ -113,12 +112,15 @@ export const dashboardService = {
         id: member._id || member.id, // Use _id as id if available
       }));
       
-      console.log("DashboardService: Transformed team members:", transformedMembers);
+      
       return transformedMembers;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("DashboardService: Failed to fetch team members:", error);
-      console.error("DashboardService: Error response:", error.response?.data);
-      console.error("DashboardService: Error status:", error.response?.status);
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: unknown; status?: number } };
+        console.error("DashboardService: Error response:", axiosError.response?.data);
+        console.error("DashboardService: Error status:", axiosError.response?.status);
+      }
       throw error;
     }
   },

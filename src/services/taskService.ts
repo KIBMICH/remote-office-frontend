@@ -106,10 +106,13 @@ export const taskService = {
       const { data } = await api.post<TaskResponse>("tasks", payload);
       console.log("TaskService: Task created successfully:", data);
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("TaskService: Create task failed:", error);
-      console.error("TaskService: Error response:", error.response?.data);
-      console.error("TaskService: Error status:", error.response?.status);
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: unknown; status?: number } };
+        console.error("TaskService: Error response:", axiosError.response?.data);
+        console.error("TaskService: Error status:", axiosError.response?.status);
+      }
       throw error;
     }
   },

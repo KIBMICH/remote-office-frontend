@@ -53,18 +53,17 @@ export default function EditProjectMembersModal({
   const fetchTeamMembers = async () => {
     try {
       setFetchingMembers(true);
-      console.log("EditProjectMembersModal: Starting to fetch team members");
+     
       
       const members = await dashboardService.getTeamMembers();
-      console.log("EditProjectMembersModal: Received team members:", members);
-      console.log("EditProjectMembersModal: Is array?", Array.isArray(members));
+     
       
       setTeamMembers(members);
       
       // Initialize with current project members
       if (project && project.members) {
-        const currentMemberIds = project.members.map(member => member.id);
-        console.log("EditProjectMembersModal: Current project member IDs:", currentMemberIds);
+        const currentMemberIds = project.members.map(member => member.id).filter(Boolean);
+        
         setSelectedMemberIds(currentMemberIds);
       }
     } catch (error) {
@@ -90,15 +89,13 @@ export default function EditProjectMembersModal({
       setLoading(true);
 
       // Find members to add (selected but not currently in project)
-      const currentMemberIds = project.members.map(member => member.id);
+      const currentMemberIds = project.members?.map(member => member.id).filter(Boolean) || [];
       const membersToAdd = selectedMemberIds.filter(id => !currentMemberIds.includes(id));
       
       // Find members to remove (currently in project but not selected)
       const membersToRemove = currentMemberIds.filter(id => !selectedMemberIds.includes(id));
 
-      console.log("Members to add:", membersToAdd);
-      console.log("Members to remove:", membersToRemove);
-
+      
       // Add new members
       if (membersToAdd.length > 0) {
         await projectService.addProjectMembers(project.id, { memberIds: membersToAdd });
@@ -124,11 +121,14 @@ export default function EditProjectMembersModal({
       }
       
       onClose();
-    } catch (error: any) {
-      console.error("Error updating project members:", error);
+    } catch (error: unknown) {
+      console.error("EditProjectMembersModal: Error updating project members:", error);
       let errorMessage = "Failed to update project members";
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
       }
       toastError(errorMessage);
     } finally {
@@ -139,7 +139,7 @@ export default function EditProjectMembersModal({
   const handleCancel = () => {
     // Reset to original members
     if (project && project.members) {
-      const currentMemberIds = project.members.map(member => member.id);
+      const currentMemberIds = project.members.map(member => member.id).filter(Boolean);
       setSelectedMemberIds(currentMemberIds);
     }
     onClose();
@@ -151,9 +151,15 @@ export default function EditProjectMembersModal({
   const safeTeamMembers = Array.isArray(teamMembers) ? teamMembers : [];
   
   // Get members not currently in project for "Available to Add" section
-  const currentMemberIds = project.members?.map(member => member.id) || [];
-  const availableMembers = safeTeamMembers.filter(member => !currentMemberIds.includes(member.id));
-  const currentMembers = safeTeamMembers.filter(member => currentMemberIds.includes(member.id));
+  const currentMemberIds = project.members?.map(member => member.id).filter(Boolean) || [];
+  const availableMembers = safeTeamMembers.filter(member => {
+    const memberId = member.id || member._id;
+    return memberId && !currentMemberIds.includes(memberId);
+  });
+  const currentMembers = safeTeamMembers.filter(member => {
+    const memberId = member.id || member._id;
+    return memberId && currentMemberIds.includes(memberId);
+  });
 
   return (
     <div className="fixed inset-0 z-[9999] overflow-y-auto">
@@ -195,23 +201,28 @@ export default function EditProjectMembersModal({
                   <div>
                     <h3 className="text-lg font-medium text-white mb-4">Current Members</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {currentMembers.map((member) => (
-                        <label
-                          key={member.id}
-                          className="flex items-center space-x-2 p-3 bg-blue-900/20 border border-blue-600 rounded-md cursor-pointer hover:bg-blue-800/30 transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedMemberIds.includes(member.id)}
-                            onChange={() => handleMemberToggle(member.id)}
-                            className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm text-gray-300 block truncate">{member.name}</span>
-                            <span className="text-xs text-gray-400 block truncate">{member.email}</span>
-                          </div>
-                        </label>
-                      ))}
+                      {currentMembers.map((member) => {
+                        const memberId = member.id || member._id;
+                        if (!memberId) return null;
+                        
+                        return (
+                          <label
+                            key={memberId}
+                            className="flex items-center space-x-2 p-3 bg-blue-900/20 border border-blue-600 rounded-md cursor-pointer hover:bg-blue-800/30 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedMemberIds.includes(memberId)}
+                              onChange={() => handleMemberToggle(memberId)}
+                              className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm text-gray-300 block truncate">{member.name}</span>
+                              <span className="text-xs text-gray-400 block truncate">{member.email}</span>
+                            </div>
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -221,23 +232,28 @@ export default function EditProjectMembersModal({
                   <div>
                     <h3 className="text-lg font-medium text-white mb-4">Available to Add</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {availableMembers.map((member) => (
-                        <label
-                          key={member.id}
-                          className="flex items-center space-x-2 p-3 bg-gray-900 border border-gray-600 rounded-md cursor-pointer hover:bg-gray-800 transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedMemberIds.includes(member.id)}
-                            onChange={() => handleMemberToggle(member.id)}
-                            className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm text-gray-300 block truncate">{member.name}</span>
-                            <span className="text-xs text-gray-400 block truncate">{member.email}</span>
-                          </div>
-                        </label>
-                      ))}
+                      {availableMembers.map((member) => {
+                        const memberId = member.id || member._id;
+                        if (!memberId) return null;
+                        
+                        return (
+                          <label
+                            key={memberId}
+                            className="flex items-center space-x-2 p-3 bg-gray-900 border border-gray-600 rounded-md cursor-pointer hover:bg-gray-800 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedMemberIds.includes(memberId)}
+                              onChange={() => handleMemberToggle(memberId)}
+                              className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm text-gray-300 block truncate">{member.name}</span>
+                              <span className="text-xs text-gray-400 block truncate">{member.email}</span>
+                            </div>
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

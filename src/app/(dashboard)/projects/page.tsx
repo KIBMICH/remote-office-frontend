@@ -6,7 +6,8 @@ import BoardColumn from "@/components/projects/BoardColumn";
 import AddTaskModal from "@/components/projects/AddTaskModal";
 import type { Task } from "@/types/project";
 import { taskService, type TaskResponse, type TaskFilters } from "@/services/taskService";
-import { dashboardService } from "@/services/dashboardService";
+import { type ProjectResponse } from "@/services/projectService";
+import { dashboardService, type TeamMember } from "@/services/dashboardService";
 
 
 export default function ProjectsPage() {
@@ -14,8 +15,8 @@ export default function ProjectsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [filters, setFilters] = useState<TaskFilters>({
     page: 1,
     limit: 50,

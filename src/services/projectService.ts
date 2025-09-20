@@ -90,11 +90,14 @@ export const projectService = {
       const { data } = await api.post<ProjectResponse>("projects", payload);
       console.log("ProjectService: Project created successfully:", data);
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("ProjectService: Create project failed:", error);
-      console.error("ProjectService: Error response:", error.response?.data);
-      console.error("ProjectService: Error status:", error.response?.status);
-      console.error("ProjectService: Request config:", error.config);
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: unknown; status?: number }; config?: unknown };
+        console.error("ProjectService: Error response:", axiosError.response?.data);
+        console.error("ProjectService: Error status:", axiosError.response?.status);
+        console.error("ProjectService: Request config:", axiosError.config);
+      }
       throw error;
     }
   },
@@ -136,9 +139,12 @@ export const projectService = {
       const { data } = await api.post(`projects/${projectId}/members`, payload);
       console.log("ProjectService: Members added successfully:", data);
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("ProjectService: Add members failed:", error);
-      console.error("ProjectService: Error response:", error.response?.data);
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: unknown } };
+        console.error("ProjectService: Error response:", axiosError.response?.data);
+      }
       throw error;
     }
   },

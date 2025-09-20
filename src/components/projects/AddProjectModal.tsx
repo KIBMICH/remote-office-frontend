@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useToast } from "@/components/ui/ToastProvider";
-import type { Priority, ProjectStatus } from "@/types/project";
+// Removed unused Priority and ProjectStatus imports
 import { projectService, type ProjectResponse } from "@/services/projectService";
 import { type TeamMember } from "@/services/dashboardService";
 
@@ -123,16 +123,20 @@ export default function AddProjectModal({ isOpen, onClose, onProjectCreated, tea
       });
       
       onClose();
-    } catch (error: any) {
-      console.error("Error creating project:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
+    } catch (error: unknown) {
+      console.error("AddProjectModal: Error creating project:", error);
       
       let errorMessage = "Failed to create project. Please try again.";
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string; error?: string }; status?: number } };
+        console.error("AddProjectModal: Error response:", axiosError.response?.data);
+        console.error("AddProjectModal: Error status:", axiosError.response?.status);
+        
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        } else if (axiosError.response?.data?.error) {
+          errorMessage = axiosError.response.data.error;
+        }
       }
       
       toastError(errorMessage);

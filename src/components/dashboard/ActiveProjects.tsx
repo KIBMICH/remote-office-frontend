@@ -26,7 +26,7 @@ export default function ActiveProjects() {
     try {
       setLoading(true);
       setError(null);
-      console.log("ActiveProjects: Fetching active projects...");
+     
       
       const response = await projectService.getProjects({
         status: "active",
@@ -36,7 +36,7 @@ export default function ActiveProjects() {
         sortOrder: "desc"
       });
       
-      console.log("ActiveProjects: Projects fetched:", response.projects.length);
+      
       setProjects(response.projects);
     } catch (err) {
       console.error("ActiveProjects: Failed to fetch projects:", err);

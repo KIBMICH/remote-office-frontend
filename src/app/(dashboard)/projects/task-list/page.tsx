@@ -5,7 +5,7 @@ import Button from "@/components/ui/Button";
 import AddTaskModal from "@/components/projects/AddTaskModal";
 import type { Task } from "@/types/project";
 import { taskService, type TaskResponse, type TaskFilters } from "@/services/taskService";
-import { dashboardService } from "@/services/dashboardService";
+import { dashboardService, type TeamMember } from "@/services/dashboardService";
 import { projectService, type ProjectResponse } from "@/services/projectService";
 
 
@@ -66,7 +66,7 @@ export default function TaskListPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [filters, setFilters] = useState<TaskFilters>({
     page: 1,

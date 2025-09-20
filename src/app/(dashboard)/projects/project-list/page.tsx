@@ -4,98 +4,11 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import AddProjectModal from "@/components/projects/AddProjectModal";
 import EditProjectMembersModal from "@/components/projects/EditProjectMembersModal";
-import type { Project } from "@/types/project";
+// Removed unused Project type import
 import { projectService, type ProjectResponse, type ProjectFilters } from "@/services/projectService";
-import { dashboardService } from "@/services/dashboardService";
+import { dashboardService, type TeamMember } from "@/services/dashboardService";
 
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: "1",
-    name: "Remote Office Platform",
-    description: "Complete remote work management platform with task tracking, team collaboration, and project management features",
-    status: "active",
-    priority: "high",
-    dueDate: "2024-12-15",
-    progress: 75,
-    members: [
-      { id: "1", name: "John Smith", avatarUrl: "" },
-      { id: "2", name: "Alice Johnson", avatarUrl: "" },
-      { id: "3", name: "Bob Brown", avatarUrl: "" },
-    ],
-    taskCount: 24,
-    completedTasks: 18,
-    createdAt: "2024-01-15",
-    tags: ["web", "react", "nodejs"],
-  },
-  {
-    id: "2",
-    name: "Mobile App Integration",
-    description: "Native mobile application for iOS and Android with offline capabilities and real-time synchronization",
-    status: "active",
-    priority: "medium",
-    dueDate: "2024-11-30",
-    progress: 40,
-    members: [
-      { id: "4", name: "Charlie Davis", avatarUrl: "" },
-      { id: "5", name: "Eva Green", avatarUrl: "" },
-    ],
-    taskCount: 15,
-    completedTasks: 6,
-    createdAt: "2024-02-01",
-    tags: ["mobile", "react-native", "api"],
-  },
-  {
-    id: "3",
-    name: "AI Feature Development",
-    description: "Machine learning integration for smart task recommendations and automated workflow optimization",
-    status: "active",
-    priority: "high",
-    dueDate: "2024-10-20",
-    progress: 90,
-    members: [
-      { id: "6", name: "Frank Moore", avatarUrl: "" },
-      { id: "7", name: "Grace Hall", avatarUrl: "" },
-      { id: "8", name: "Henry King", avatarUrl: "" },
-    ],
-    taskCount: 12,
-    completedTasks: 11,
-    createdAt: "2024-03-10",
-    tags: ["ai", "ml", "python"],
-  },
-  {
-    id: "4",
-    name: "Security Audit & Compliance",
-    description: "Comprehensive security review and implementation of compliance standards (SOC2, GDPR)",
-    status: "on_hold",
-    priority: "medium",
-    dueDate: "2025-01-31",
-    progress: 25,
-    members: [
-      { id: "9", name: "Ivy Chen", avatarUrl: "" },
-    ],
-    taskCount: 8,
-    completedTasks: 2,
-    createdAt: "2024-04-05",
-    tags: ["security", "compliance", "audit"],
-  },
-  {
-    id: "5",
-    name: "Documentation Portal",
-    description: "Comprehensive documentation website with API references, user guides, and developer resources",
-    status: "completed",
-    priority: "low",
-    dueDate: "2024-08-30",
-    progress: 100,
-    members: [
-      { id: "10", name: "Jack Wilson", avatarUrl: "" },
-      { id: "11", name: "Kate Brown", avatarUrl: "" },
-    ],
-    taskCount: 6,
-    completedTasks: 6,
-    createdAt: "2024-06-01",
-    tags: ["documentation", "website", "guides"],
-  },
-];
+// Removed MOCK_PROJECTS - now using real API data
 
 const getPriorityColor = (priority: string) => {
   switch (priority) {
@@ -167,7 +80,7 @@ export default function ProjectListPage() {
   const [selectedProject, setSelectedProject] = useState<ProjectResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [filters, setFilters] = useState<ProjectFilters>({
     page: 1,
     limit: 10,
@@ -205,9 +118,9 @@ export default function ProjectListPage() {
   // Fetch team members for project creation
   const fetchTeamMembers = async () => {
     try {
-      console.log("Fetching team members...");
+    
       const members = await dashboardService.getTeamMembers();
-      console.log("Team members fetched:", members);
+    
       setTeamMembers(members);
     } catch (err) {
       console.error("Failed to fetch team members:", err);

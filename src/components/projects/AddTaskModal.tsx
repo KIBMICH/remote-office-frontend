@@ -107,16 +107,20 @@ export default function AddTaskModal({ isOpen, onClose, onTaskCreated, teamMembe
       });
       
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("AddTaskModal: Error creating task:", error);
-      console.error("AddTaskModal: Error response:", error.response?.data);
-      console.error("AddTaskModal: Error status:", error.response?.status);
       
       let errorMessage = "Failed to create task. Please try again.";
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string; error?: string }; status?: number } };
+        console.error("AddTaskModal: Error response:", axiosError.response?.data);
+        console.error("AddTaskModal: Error status:", axiosError.response?.status);
+        
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        } else if (axiosError.response?.data?.error) {
+          errorMessage = axiosError.response.data.error;
+        }
       }
       
       toastError(errorMessage);
