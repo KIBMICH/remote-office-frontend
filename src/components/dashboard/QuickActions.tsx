@@ -1,10 +1,17 @@
 import React from "react";
 import Button from "@/components/ui/Button";
 
-export default function QuickActions() {
+interface QuickActionsProps {
+  onCreateTask?: () => void;
+}
+
+export default function QuickActions({ onCreateTask }: QuickActionsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <Button className="justify-center gap-3 bg-blue-600 hover:bg-blue-700">
+      <Button 
+        className="justify-center gap-3 bg-blue-600 hover:bg-blue-700"
+        onClick={onCreateTask}
+      >
         <PlusIcon className="w-5 h-5" />
         Create New Task
       </Button>
