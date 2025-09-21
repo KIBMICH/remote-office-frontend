@@ -224,12 +224,12 @@ export default function TaskListPage() {
           <table className="w-full min-w-[800px]">
             <thead className="bg-gray-800 border-b border-gray-700">
               <tr>
-                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300">Task</th>
+                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 w-[35%] sm:w-auto">Task</th>
                 <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 hidden sm:table-cell">Assignee</th>
                 <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 hidden md:table-cell">Due Date</th>
-                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300">Priority</th>
-                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300">Status</th>
-                <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium text-gray-300">Actions</th>
+                <th className="text-left py-3 sm:py-4 px-2 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 w-[15%] sm:w-auto">Priority</th>
+                <th className="text-left py-3 sm:py-4 px-2 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 w-[20%] sm:w-auto">Status</th>
+                <th className="text-left py-3 sm:py-4 px-2 sm:px-6 text-xs sm:text-sm font-medium text-gray-300 w-[30%] sm:w-auto">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
@@ -247,17 +247,17 @@ export default function TaskListPage() {
                   </td>
                   <td className="py-3 sm:py-4 px-3 sm:px-6 text-gray-300 text-sm hidden sm:table-cell">{task.assignee.name}</td>
                   <td className="py-3 sm:py-4 px-3 sm:px-6 text-gray-300 text-sm hidden md:table-cell">{formatDate(task.dueDate)}</td>
-                  <td className="py-3 sm:py-4 px-3 sm:px-6">
+                  <td className="py-3 sm:py-4 px-2 sm:px-6">
                     <span className={`capitalize text-xs sm:text-sm font-medium ${getPriorityColor(task.priority)}`}>
                       {task.priority}
                     </span>
                   </td>
-                  <td className="py-3 sm:py-4 px-3 sm:px-6">
-                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}>
+                  <td className="py-3 sm:py-4 px-2 sm:px-6">
+                    <span className={`px-1.5 sm:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(task.status)}`}>
                       {formatStatus(task.status)}
                     </span>
                   </td>
-                  <td className="py-3 sm:py-4 px-3 sm:px-6">
+                  <td className="py-3 sm:py-4 px-2 sm:px-6">
                     <div className="flex items-center gap-1 sm:gap-2">
                       <Button
                         variant="outline"
