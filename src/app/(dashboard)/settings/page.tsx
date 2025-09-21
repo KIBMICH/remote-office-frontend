@@ -91,7 +91,7 @@ export default function SettingsPage() {
   const populateProfileFields = useCallback((userData?: typeof user) => {
     const userToUse = userData || user;
     if (loading || !userToUse) {
-      console.log('Cannot populate profile fields - loading:', loading, 'user:', !!userToUse);
+     
       return;
     }
     
