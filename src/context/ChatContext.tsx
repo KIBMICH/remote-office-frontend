@@ -248,11 +248,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'MARK_AS_READ', payload: channelId });
   };
 
-  const addTypingIndicator = (indicator: TypingIndicator) => {
+  const addTypingIndicator = (_indicator: TypingIndicator) => {
     // Implementation for typing indicators
   };
 
-  const removeTypingIndicator = (channelId: string, userId: string) => {
+  const removeTypingIndicator = (_channelId: string, _userId: string) => {
     // Implementation for removing typing indicators
   };
 

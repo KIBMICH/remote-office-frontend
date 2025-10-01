@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { useChatContext } from '@/context/ChatContext';
 import { Message } from '@/types/chat';
 import Avatar from '@/components/ui/Avatar';
@@ -12,7 +12,7 @@ interface MessageListProps {
 export default function MessageList({ channelId }: MessageListProps) {
   const { state } = useChatContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messages = state.messages[channelId] || [];
+  const messages = useMemo(() => state.messages[channelId] || [], [state.messages, channelId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

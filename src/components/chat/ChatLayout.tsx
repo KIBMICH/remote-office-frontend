@@ -49,7 +49,6 @@ export default function ChatLayout() {
         `}>
           <ChatSidebar 
             onChannelSelect={handleChannelSelect}
-            selectedChannelId={selectedChannel}
           />
         </div>
 

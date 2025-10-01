@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 interface WebSocketMessage {
   type: string;
-  payload: any;
+  payload: unknown;
   timestamp: number;
 }
 
@@ -107,7 +107,7 @@ export function useWebSocket({
     return () => {
       disconnect();
     };
-  }, [url]);
+  }, [url]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     isConnected,

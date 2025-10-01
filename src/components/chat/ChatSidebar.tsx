@@ -6,10 +6,9 @@ import Avatar from '@/components/ui/Avatar';
 
 interface ChatSidebarProps {
   onChannelSelect?: (channelId: string) => void;
-  selectedChannelId?: string | null;
 }
 
-export default function ChatSidebar({ onChannelSelect, selectedChannelId }: ChatSidebarProps) {
+export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
   const { state, setActiveChannel, searchChannels } = useChatContext();
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'favorites' | 'groups'>('all');
 
@@ -84,7 +83,7 @@ export default function ChatSidebar({ onChannelSelect, selectedChannelId }: Chat
           ].map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
+              onClick={() => setActiveTab(tab.key as 'all' | 'unread' | 'favorites' | 'groups')}
               className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 activeTab === tab.key
                   ? 'bg-blue-600 text-white'
