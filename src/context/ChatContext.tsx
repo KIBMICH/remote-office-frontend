@@ -140,13 +140,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       // Only initialize once when user is available
       if (!user || isInitialized || state.isLoading) return;
 
-      // TEMPORARY: Skip initialization if rate limited (comment out after rate limit resets)
-      // Uncomment the line below to disable auto-loading during development
-      // return;
-
       setIsInitialized(true);
 
-      // Set current user
+      // Set current user (always needed for chat to work)
       const currentUser: User = {
         id: user.id,
         name: `${user.firstName} ${user.lastName}`,
