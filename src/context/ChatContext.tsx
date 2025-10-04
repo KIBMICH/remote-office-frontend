@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { ChatState, ChatChannel, Message, User, TypingIndicator } from '@/types/chat';
 import { chatService } from '@/services/chatService';
+import { socketService } from '@/services/socketService';
 import { useAuthContext } from '@/context/AuthContext';
 
 interface ChatContextType {
@@ -30,7 +31,8 @@ type ChatAction =
   | { type: 'MARK_AS_READ'; payload: string }
   | { type: 'UPDATE_CHANNEL'; payload: ChatChannel }
   | { type: 'DELETE_MESSAGE'; payload: { channelId: string; messageId: string } }
-  | { type: 'UPDATE_MESSAGE'; payload: { channelId: string; messageId: string; content: string } };
+  | { type: 'UPDATE_MESSAGE'; payload: { channelId: string; messageId: string; content: string } }
+  | { type: 'UPDATE_USER_STATUS'; payload: { userId: string; status: 'online' | 'offline' | 'away' } };
 
 const initialState: ChatState = {
   channels: [],
@@ -122,6 +124,19 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
         },
       };
     
+    case 'UPDATE_USER_STATUS':
+      return {
+        ...state,
+        channels: state.channels.map(channel => ({
+          ...channel,
+          participants: channel.participants.map(p =>
+            p.id === action.payload.userId
+              ? { ...p, status: action.payload.status }
+              : p
+          ),
+        })),
+      };
+    
     default:
       return state;
   }
@@ -151,6 +166,50 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         status: 'online',
       };
       dispatch({ type: 'SET_CURRENT_USER', payload: currentUser });
+
+      // Connect to Socket.IO for real-time updates
+      const token = localStorage.getItem('token');
+      if (token) {
+        console.log('Connecting to Socket.IO...');
+        socketService.connect(token);
+        
+        // Listen for user status changes
+        socketService.onUserStatusChange(({ userId, status }) => {
+         // console.log('User status changed:', userId, status);
+          dispatch({
+            type: 'UPDATE_USER_STATUS',
+            payload: { userId, status }
+          });
+        });
+        
+        // Listen for new messages
+        socketService.onNewMessage((message) => {
+        
+          const msg = chatService.convertMessageResponse(message as import('@/types/chat').MessageResponse);
+          dispatch({
+            type: 'ADD_MESSAGE',
+            payload: { channelId: msg.senderId, message: msg }
+          });
+        });
+
+        // Listen for message edits
+        socketService.onMessageEdited(({ messageId, content, channelId }) => {
+         
+          dispatch({
+            type: 'UPDATE_MESSAGE',
+            payload: { channelId, messageId, content }
+          });
+        });
+
+        // Listen for message deletions
+        socketService.onMessageDeleted(({ messageId, channelId }) => {
+          
+          dispatch({
+            type: 'DELETE_MESSAGE',
+            payload: { channelId, messageId }
+          });
+        });
+      }
 
       // Fetch channels from API with rate limit protection
       try {
@@ -279,6 +338,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
   };
+
+  // Cleanup Socket.IO connection on unmount
+  useEffect(() => {
+    return () => {
+     // console.log('Cleaning up Socket.IO connection...');
+      socketService.disconnect();
+    };
+  }, []);
 
   return (
     <ChatContext.Provider
