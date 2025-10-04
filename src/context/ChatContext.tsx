@@ -175,7 +175,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         
         // Listen for user status changes
         socketService.onUserStatusChange(({ userId, status }) => {
-          console.log('User status changed:', userId, status);
+         // console.log('User status changed:', userId, status);
           dispatch({
             type: 'UPDATE_USER_STATUS',
             payload: { userId, status }
@@ -184,7 +184,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         
         // Listen for new messages
         socketService.onNewMessage((message) => {
-          console.log('New message received:', message);
+        
           const msg = chatService.convertMessageResponse(message as import('@/types/chat').MessageResponse);
           dispatch({
             type: 'ADD_MESSAGE',
@@ -194,7 +194,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
         // Listen for message edits
         socketService.onMessageEdited(({ messageId, content, channelId }) => {
-          console.log('Message edited:', messageId);
+         
           dispatch({
             type: 'UPDATE_MESSAGE',
             payload: { channelId, messageId, content }
@@ -203,7 +203,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
         // Listen for message deletions
         socketService.onMessageDeleted(({ messageId, channelId }) => {
-          console.log('Message deleted:', messageId);
+          
           dispatch({
             type: 'DELETE_MESSAGE',
             payload: { channelId, messageId }
@@ -342,7 +342,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Cleanup Socket.IO connection on unmount
   useEffect(() => {
     return () => {
-      console.log('Cleaning up Socket.IO connection...');
+     // console.log('Cleaning up Socket.IO connection...');
       socketService.disconnect();
     };
   }, []);
