@@ -7,13 +7,10 @@ class SocketService {
 
   connect(token: string) {
     if (this.socket?.connected) {
-      console.log('Socket already connected');
       return this.socket;
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-    
-    console.log('Connecting to Socket.IO server:', baseUrl);
 
     this.socket = io(baseUrl, {
       auth: {
@@ -34,21 +31,16 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('✅ Socket.IO connected:', this.socket?.id);
       this.reconnectAttempts = 0;
     });
 
-    this.socket.on('disconnect', (reason) => {
-      console.log('❌ Socket.IO disconnected:', reason);
+    this.socket.on('disconnect', () => {
+      // Handle disconnect silently
     });
 
     this.socket.on('connect_error', (error) => {
       console.error('Socket.IO connection error:', error);
       this.reconnectAttempts++;
-      
-      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.error('Max reconnection attempts reached');
-      }
     });
 
     this.socket.on('error', (error) => {
@@ -58,7 +50,6 @@ class SocketService {
 
   disconnect() {
     if (this.socket) {
-      console.log('Disconnecting socket...');
       this.socket.disconnect();
       this.socket = null;
     }
@@ -87,16 +78,25 @@ class SocketService {
   }
 
   // Presence events
+  onUserStatusChange(callback: (data: { userId: string; status: 'online' | 'offline' | 'away' | 'busy'; lastSeen?: string }) => void) {
+    this.on<{ userId: string; status: 'online' | 'offline' | 'away' | 'busy'; lastSeen?: string }>('user_status_change', callback);
+  }
+
+  // Legacy methods for backward compatibility (deprecated)
   onUserOnline(callback: (userId: string) => void) {
-    this.on<string>('user:online', callback);
+    this.onUserStatusChange((data) => {
+      if (data.status === 'online') {
+        callback(data.userId);
+      }
+    });
   }
 
   onUserOffline(callback: (userId: string) => void) {
-    this.on<string>('user:offline', callback);
-  }
-
-  onUserStatusChange(callback: (data: { userId: string; status: 'online' | 'offline' | 'away' }) => void) {
-    this.on<{ userId: string; status: 'online' | 'offline' | 'away' }>('user:status', callback);
+    this.onUserStatusChange((data) => {
+      if (data.status === 'offline') {
+        callback(data.userId);
+      }
+    });
   }
 
   // Chat events
@@ -140,6 +140,11 @@ class SocketService {
 
   emitTypingStop(channelId: string) {
     this.emit('typing:stop', { channelId });
+  }
+
+  // Emit status change
+  emitStatusChange(status: 'online' | 'offline' | 'away' | 'busy') {
+    this.emit('change_status', { status });
   }
 }
 
