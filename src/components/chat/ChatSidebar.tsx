@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useChatContext } from '@/context/ChatContext';
 import Avatar from '@/components/ui/Avatar';
+import AddChannelModal from '@/components/chat/AddChannelModal';
 
 interface ChatSidebarProps {
   onChannelSelect?: (channelId: string) => void;
@@ -11,23 +12,31 @@ interface ChatSidebarProps {
 export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
   const { state, setActiveChannel, searchChannels } = useChatContext();
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'favorites' | 'groups'>('all');
+  const [isAddChannelModalOpen, setIsAddChannelModalOpen] = useState(false);
 
   const filteredChannels = state.channels.filter(channel => {
+    // For channels section, only show group and project channels (not direct messages)
+    const isGroupOrProject = channel.type === 'group' || channel.type === 'project';
     const matchesSearch = channel.name.toLowerCase().includes(state.searchQuery.toLowerCase());
     
     switch (activeTab) {
       case 'unread':
-        return matchesSearch && channel.unreadCount > 0;
+        return isGroupOrProject && matchesSearch && channel.unreadCount > 0;
       case 'favorites':
-        return matchesSearch; // Add favorite logic later
+        return isGroupOrProject && matchesSearch; // Add favorite logic later
       case 'groups':
         return matchesSearch && channel.type === 'group';
       default:
-        return matchesSearch;
+        return isGroupOrProject && matchesSearch;
     }
   });
 
   const formatTime = (date: Date) => {
+    // Check if date is valid
+    if (!date || isNaN(date.getTime())) {
+      return '';
+    }
+
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
@@ -37,7 +46,10 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
     if (minutes < 1) return 'now';
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
-    return `${days}d`;
+    if (days < 7) return `${days}d`;
+    
+    // For older messages, show the date
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -99,10 +111,32 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
       {/* Channels List */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-2">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2 py-2">
-            Channels
-          </h3>
-          {filteredChannels.map((channel) => (
+          <div className="flex items-center justify-between px-2 py-2">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Channels
+            </h3>
+            <button
+              onClick={() => setIsAddChannelModalOpen(true)}
+              className="p-1 hover:bg-gray-800 rounded transition-colors group"
+              title="Create new channel"
+            >
+              <PlusIcon className="w-4 h-4 text-gray-400 group-hover:text-white" />
+            </button>
+          </div>
+          
+          {state.isLoading ? (
+            <div className="p-4 text-center text-gray-400 text-sm">
+              Loading channels...
+            </div>
+          ) : filteredChannels.length === 0 ? (
+            <div className="p-4 text-center">
+              <p className="text-gray-400 text-sm mb-2">No channels yet</p>
+              <p className="text-gray-500 text-xs">
+                Click the + button to create a channel
+              </p>
+            </div>
+          ) : (
+            filteredChannels.map((channel) => (
             <button
               key={channel.id}
               onClick={() => {
@@ -116,20 +150,9 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
               }`}
             >
               <div className="relative">
-                {channel.type === 'direct' && channel.participants.length === 2 ? (
-                  <Avatar
-                    src={channel.participants.find(p => p.id !== state.currentUser?.id)?.avatarUrl}
-                    fallback={channel.participants.find(p => p.id !== state.currentUser?.id)?.name?.charAt(0)}
-                    size="sm"
-                  />
-                ) : (
-                  <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-semibold text-gray-300">#</span>
-                  </div>
-                )}
-                {channel.type === 'direct' && channel.isOnline && (
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-black rounded-full"></div>
-                )}
+                <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-semibold text-gray-300">#</span>
+                </div>
               </div>
               
               <div className="flex-1 min-w-0 text-left">
@@ -157,7 +180,8 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
                 </div>
               )}
             </button>
-          ))}
+          ))
+          )}
         </div>
 
         {/* Direct Messages Section */}
@@ -166,29 +190,69 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
               Direct Messages
             </h3>
+            <button
+              onClick={() => setIsAddChannelModalOpen(true)}
+              className="p-1 hover:bg-gray-800 rounded transition-colors group"
+              title="Start new direct message"
+            >
+              <PlusIcon className="w-4 h-4 text-gray-400 group-hover:text-white" />
+            </button>
           </div>
           
-          {/* Mock associates list */}
-          {[
-            { id: 'alice', name: 'Alice Johnson', status: 'Just now', avatar: 'AJ' },
-            { id: 'bob', name: 'Bob Smith', status: '11:05 AM', avatar: 'BS' },
-            { id: 'team-lead', name: 'Team Lead (You)', status: 'Yesterday', avatar: 'TL' },
-            { id: 'product-design', name: 'Product Design Team', status: 'Yesterday', avatar: 'PD' },
-          ].map((associate) => (
-            <div key={associate.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-900 cursor-pointer">
-              <Avatar
-                fallback={associate.avatar}
-                size="sm"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{associate.name}</p>
-                <p className="text-xs text-gray-400">{associate.status}</p>
-              </div>
-            </div>
-          ))}
+          {state.channels.filter(ch => ch.type === 'direct').length > 0 ? (
+            state.channels
+              .filter(ch => ch.type === 'direct')
+              .map((channel) => {
+                const otherUser = channel.participants.find(p => p.id !== state.currentUser?.id);
+                return (
+                  <button
+                    key={channel.id}
+                    onClick={() => {
+                      setActiveChannel(channel.id);
+                      onChannelSelect?.(channel.id);
+                    }}
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${
+                      state.activeChannelId === channel.id
+                        ? 'bg-gray-800'
+                        : 'hover:bg-gray-900'
+                    }`}
+                  >
+                    <Avatar
+                      src={otherUser?.avatarUrl}
+                      fallback={otherUser?.name?.charAt(0).toUpperCase()}
+                      size="sm"
+                    />
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-sm font-medium text-white truncate">
+                        {otherUser?.name || 'Unknown User'}
+                      </p>
+                      {channel.lastMessage && (
+                        <p className="text-xs text-gray-400 truncate">
+                          {formatTime(channel.lastMessage.timestamp)}
+                        </p>
+                      )}
+                    </div>
+                    {channel.unreadCount > 0 && (
+                      <div className="bg-blue-600 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                        {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
+                      </div>
+                    )}
+                  </button>
+                );
+              })
+          ) : (
+            <p className="text-xs text-gray-500 text-center py-4">
+              No direct messages yet
+            </p>
+          )}
         </div>
       </div>
 
+      {/* Add Channel Modal */}
+      <AddChannelModal
+        isOpen={isAddChannelModalOpen}
+        onClose={() => setIsAddChannelModalOpen(false)}
+      />
     </div>
   );
 }
@@ -226,6 +290,14 @@ function DotsIcon(props: React.SVGProps<SVGSVGElement>) {
       <circle cx="12" cy="12" r="1" />
       <circle cx="19" cy="12" r="1" />
       <circle cx="5" cy="12" r="1" />
+    </svg>
+  );
+}
+
+function PlusIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M12 5v14M5 12h14" />
     </svg>
   );
 }

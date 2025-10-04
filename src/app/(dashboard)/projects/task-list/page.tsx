@@ -68,7 +68,7 @@ export default function TaskListPage() {
   const [error, setError] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
-  const [filters, setFilters] = useState<TaskFilters>({
+  const [filters] = useState<TaskFilters>({
     page: 1,
     limit: 50,
     sortBy: "dueDate",
@@ -119,10 +119,12 @@ export default function TaskListPage() {
   useEffect(() => {
     fetchTasks();
     fetchSupportingData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     fetchTasks();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
   // Convert TaskResponse to Task for UI compatibility

@@ -53,6 +53,20 @@ export const API_ENDPOINTS = {
     PROJECT_ANALYTICS: "dashboard/project-analytics",
     TEAM_MEMBERS: "dashboard/team-members",
   },
+  CHAT: {
+    CHANNELS: "chat/channels",
+    CREATE_CHANNEL: "chat/channels",
+    GET_CHANNEL_MESSAGES: "chat/channels/:channelId/messages",
+    SEND_MESSAGE: "chat/channels/:channelId/messages",
+    EDIT_MESSAGE: "chat/messages/:messageId",
+    DELETE_MESSAGE: "chat/messages/:messageId",
+    MARK_AS_READ: "chat/channels/:channelId/read",
+    SEARCH_USERS: "chat/users/search",
+    JOIN_CHANNEL: "chat/channels/:channelId/join",
+    LEAVE_CHANNEL: "chat/channels/:channelId/leave",
+    GET_CHANNEL_USERS: "chat/channels/:channelId/users",
+    UPLOAD_FILE: "chat/upload",
+  },
 } as const;
 
 // App Configuration
