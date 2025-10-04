@@ -32,7 +32,7 @@ type ChatAction =
   | { type: 'UPDATE_CHANNEL'; payload: ChatChannel }
   | { type: 'DELETE_MESSAGE'; payload: { channelId: string; messageId: string } }
   | { type: 'UPDATE_MESSAGE'; payload: { channelId: string; messageId: string; content: string } }
-  | { type: 'UPDATE_USER_STATUS'; payload: { userId: string; status: 'online' | 'offline' | 'away' } };
+  | { type: 'UPDATE_USER_STATUS'; payload: { userId: string; status: 'online' | 'offline' | 'away' | 'busy'; lastSeen?: string } };
 
 const initialState: ChatState = {
   channels: [],
@@ -131,7 +131,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
           ...channel,
           participants: channel.participants.map(p =>
             p.id === action.payload.userId
-              ? { ...p, status: action.payload.status }
+              ? { ...p, status: action.payload.status, lastSeen: action.payload.lastSeen }
               : p
           ),
         })),
@@ -170,21 +170,28 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       // Connect to Socket.IO for real-time updates
       const token = localStorage.getItem('token');
       if (token) {
-        console.log('Connecting to Socket.IO...');
-        socketService.connect(token);
+        const socket = socketService.connect(token);
         
-        // Listen for user status changes
-        socketService.onUserStatusChange(({ userId, status }) => {
-         // console.log('User status changed:', userId, status);
-          dispatch({
-            type: 'UPDATE_USER_STATUS',
-            payload: { userId, status }
+        // Wait for connection before registering listeners
+        socket.on('connect', () => {
+          // Listen for user status changes
+          socketService.onUserStatusChange((data) => {
+            dispatch({
+              type: 'UPDATE_USER_STATUS',
+              payload: { 
+                userId: data.userId, 
+                status: data.status,
+                lastSeen: data.lastSeen 
+              }
+            });
           });
+          
+          // Notify backend of online status
+          socketService.emitStatusChange('online');
         });
         
         // Listen for new messages
         socketService.onNewMessage((message) => {
-        
           const msg = chatService.convertMessageResponse(message as import('@/types/chat').MessageResponse);
           dispatch({
             type: 'ADD_MESSAGE',
@@ -194,7 +201,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
         // Listen for message edits
         socketService.onMessageEdited(({ messageId, content, channelId }) => {
-         
           dispatch({
             type: 'UPDATE_MESSAGE',
             payload: { channelId, messageId, content }
@@ -203,7 +209,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
         // Listen for message deletions
         socketService.onMessageDeleted(({ messageId, channelId }) => {
-          
           dispatch({
             type: 'DELETE_MESSAGE',
             payload: { channelId, messageId }
@@ -342,7 +347,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Cleanup Socket.IO connection on unmount
   useEffect(() => {
     return () => {
-     // console.log('Cleaning up Socket.IO connection...');
       socketService.disconnect();
     };
   }, []);

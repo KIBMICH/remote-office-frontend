@@ -5,7 +5,8 @@ export interface UserResponse {
   email: string;
   avatarUrl?: string;
   role?: string;
-  status?: 'online' | 'offline' | 'away';
+  status?: 'online' | 'offline' | 'away' | 'busy';
+  lastSeen?: string;
 }
 
 export interface MessageResponse {
@@ -42,7 +43,8 @@ export interface ChannelResponse {
     email: string;
     avatarUrl?: string;
     role?: string;
-    status?: 'online' | 'offline' | 'away';
+    status?: 'online' | 'offline' | 'away' | 'busy';
+    lastSeen?: string;
   }[];
   lastMessage?: MessageResponse;
   unreadCount: number;
@@ -76,7 +78,8 @@ export interface User {
   name: string;
   email: string;
   avatarUrl?: string;
-  status: 'online' | 'offline' | 'away';
+  status: 'online' | 'offline' | 'away' | 'busy';
+  lastSeen?: string;
 }
 
 export interface Message {
