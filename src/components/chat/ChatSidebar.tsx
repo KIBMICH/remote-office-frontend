@@ -1,18 +1,25 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useChatContext } from '@/context/ChatContext';
 import Avatar from '@/components/ui/Avatar';
 import AddChannelModal from '@/components/chat/AddChannelModal';
+import { chatService } from '@/services/chatService';
+import { useToast } from '@/components/ui/ToastProvider';
 
 interface ChatSidebarProps {
   onChannelSelect?: (channelId: string) => void;
 }
 
 export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
-  const { state, setActiveChannel, searchChannels } = useChatContext();
+  const { state, setActiveChannel, searchChannels, refreshChannels } = useChatContext();
+  const { error: toastError, success: toastSuccess } = useToast();
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'favorites' | 'groups'>('all');
   const [isAddChannelModalOpen, setIsAddChannelModalOpen] = useState(false);
+  const [dmSearchQuery, setDmSearchQuery] = useState('');
+  const [searchingUsers, setSearchingUsers] = useState(false);
+  const [searchResults, setSearchResults] = useState<Array<{ id: string; name: string; email: string; avatarUrl?: string }>>([]);
+  const [isRateLimited, setIsRateLimited] = useState(false);
 
   const filteredChannels = state.channels.filter(channel => {
     // For channels section, only show group and project channels (not direct messages)
@@ -30,6 +37,150 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
         return isGroupOrProject && matchesSearch;
     }
   });
+
+  // Search for users to start direct messages
+  useEffect(() => {
+    const searchUsers = async () => {
+      if (dmSearchQuery.trim().length < 2) {
+        setSearchResults([]);
+        return;
+      }
+
+      // Skip search if we've detected rate limiting
+      if (isRateLimited) {
+        return;
+      }
+
+      setSearchingUsers(true);
+      try {
+        const users = await chatService.searchUsers(dmSearchQuery);
+        setSearchResults(users);
+      } catch (error) {
+        console.error('Error searching users:', error);
+        const errorData = error as { response?: { status?: number } };
+        
+        // Handle rate limit gracefully - stop making requests
+        if (errorData?.response?.status === 429) {
+          console.warn('⚠️ Rate limit exceeded for user search. Feature temporarily disabled.');
+          setIsRateLimited(true);
+        }
+        setSearchResults([]);
+      } finally {
+        setSearchingUsers(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(searchUsers, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [dmSearchQuery, isRateLimited]);
+
+  // Handle creating or opening a direct message
+  const handleStartDirectMessage = async (userId: string) => {
+    try {
+      // Check if a DM already exists with this user
+      const existingDM = state.channels.find(
+        ch => ch.type === 'direct' && ch.participants.some(p => p.id === userId)
+      );
+
+      if (existingDM) {
+        // Open existing DM
+        setActiveChannel(existingDM.id);
+        onChannelSelect?.(existingDM.id);
+        // Clear search
+        setDmSearchQuery('');
+        setSearchResults([]);
+      } else {
+        // Find the user details for the channel name
+        const selectedUser = searchResults.find(u => u.id === userId);
+        const channelName = selectedUser ? `DM with ${selectedUser.name}` : 'Direct Chat';
+        
+        const payload = {
+          name: channelName,
+          type: 'direct' as const,
+          participantIds: [userId],
+        };
+        
+        console.log('Creating direct channel with payload:', JSON.stringify(payload, null, 2));
+        console.log('Payload type check:', {
+          name: typeof payload.name,
+          type: typeof payload.type,
+          participantIds: Array.isArray(payload.participantIds),
+          participantIdsLength: payload.participantIds.length,
+          firstParticipantId: payload.participantIds[0]
+        });
+        
+        // Create new DM - direct channels don't need isPrivate field
+        const newChannel = await chatService.createChannel(payload);
+        
+        console.log('Direct channel created:', newChannel);
+        
+        // Refresh channels to get the new DM
+        if (refreshChannels) {
+          await refreshChannels();
+        }
+        
+        // Open the new DM
+        setActiveChannel(newChannel.id);
+        onChannelSelect?.(newChannel.id);
+        
+        // Clear search
+        setDmSearchQuery('');
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Error creating direct message:', error);
+      const errorData = error as { response?: { data?: unknown; status?: number; statusText?: string } };
+      console.error('Error status:', errorData?.response?.status);
+      console.error('Error details:', errorData?.response?.data);
+      
+      // Show specific error message based on status
+      if (errorData?.response?.status === 400) {
+        const errorMsg = errorData?.response?.data as { message?: string };
+        
+        // If channel already exists, try to refresh and find it
+        if (errorMsg?.message?.includes('already exists')) {
+          toastError('A chat with this user already exists. Refreshing channels...');
+          
+          // Try to refresh channels to get the existing DM
+          if (refreshChannels) {
+            try {
+              await refreshChannels();
+              
+              // After refresh, try to find and open the existing DM
+              const existingDM = state.channels.find(
+                ch => ch.type === 'direct' && ch.participants.some(p => p.id === userId)
+              );
+              
+              if (existingDM) {
+                setActiveChannel(existingDM.id);
+                onChannelSelect?.(existingDM.id);
+                toastSuccess('Opened existing chat');
+              } else {
+                toastError('Please refresh the page to see your existing chat with this user.');
+              }
+            } catch (refreshError) {
+              console.error('Error refreshing channels:', refreshError);
+              toastError('Please refresh the page to see your existing chat with this user.');
+            }
+          } else {
+            toastError('Please refresh the page to see your existing chat with this user.');
+          }
+          
+          // Clear search
+          setDmSearchQuery('');
+          setSearchResults([]);
+        } else {
+          toastError(errorMsg?.message || 'Invalid request. Please check the user and try again.');
+        }
+      } else if (errorData?.response?.status === 429) {
+        toastError('Rate limit exceeded. Please wait a few minutes and try again.');
+      } else if (errorData?.response?.status === 404) {
+        toastError('User not found. Please try searching again.');
+      } else {
+        toastError('Failed to create direct message. Please try again.');
+      }
+    }
+  };
 
   const formatTime = (date: Date) => {
     // Check if date is valid
@@ -186,18 +337,66 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
 
         {/* Direct Messages Section */}
         <div className="p-2 mt-4">
-          <div className="flex items-center justify-between px-2 py-2">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <div className="px-2 py-2">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               Direct Messages
             </h3>
-            <button
-              onClick={() => setIsAddChannelModalOpen(true)}
-              className="p-1 hover:bg-gray-800 rounded transition-colors group"
-              title="Start new direct message"
-            >
-              <PlusIcon className="w-4 h-4 text-gray-400 group-hover:text-white" />
-            </button>
+            {/* Search field for finding users */}
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search users..."
+                className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                value={dmSearchQuery}
+                onChange={(e) => setDmSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
+          
+          {/* User search results */}
+          {dmSearchQuery.trim().length >= 2 && (
+            <div className="mb-2">
+              {isRateLimited ? (
+                <div className="px-3 py-3 bg-yellow-900/20 border border-yellow-700/30 rounded-lg">
+                  <p className="text-xs text-yellow-400 font-medium mb-1">⚠️ Rate Limit Reached</p>
+                  <p className="text-xs text-gray-400">
+                    Too many requests. Please wait a few minutes and refresh the page to try again.
+                  </p>
+                </div>
+              ) : searchingUsers ? (
+                <div className="px-2 py-2 text-xs text-gray-400">Searching...</div>
+              ) : searchResults.length > 0 ? (
+                <div className="space-y-1">
+                  {searchResults.map((user) => (
+                    <button
+                      key={user.id}
+                      onClick={() => handleStartDirectMessage(user.id)}
+                      className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-900 transition-colors"
+                    >
+                      <Avatar
+                        src={user.avatarUrl}
+                        fallback={user.name.charAt(0).toUpperCase()}
+                        size="sm"
+                      />
+                      <div className="flex-1 min-w-0 text-left">
+                        <p className="text-sm font-medium text-white truncate">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-gray-400 truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="px-2 py-2 text-xs text-gray-400">
+                  No users found. Try a different search term.
+                </div>
+              )}
+            </div>
+          )}
           
           {state.channels.filter(ch => ch.type === 'direct').length > 0 ? (
             state.channels
@@ -240,11 +439,11 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
                   </button>
                 );
               })
-          ) : (
+          ) : dmSearchQuery.trim().length === 0 ? (
             <p className="text-xs text-gray-500 text-center py-4">
-              No direct messages yet
+              Search for users to start a conversation
             </p>
-          )}
+          ) : null}
         </div>
       </div>
 

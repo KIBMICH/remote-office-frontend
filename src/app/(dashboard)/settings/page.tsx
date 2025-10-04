@@ -40,6 +40,8 @@ const countries = [
 export default function SettingsPage() {
   const { user, isAuthenticated, setUser, loading } = useAuthContext();
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const hasInitializedProfile = useRef(false);
+  const skipNextPopulate = useRef(false);
 
   // Default to Profile tab; Company tab is available for company_admin users
   const [active, setActive] = useState("profile");
@@ -88,6 +90,7 @@ export default function SettingsPage() {
   // No automatic tab switching - let them choose which tab they want to view
 
   // Function to populate profile fields from user data
+  // This function should be stable and not recreate on every user change
   const populateProfileFields = useCallback((userData?: typeof user) => {
     const userToUse = userData || user;
     if (loading || !userToUse) {
@@ -125,7 +128,8 @@ export default function SettingsPage() {
     if (!hasLocalAvatarPreview && userToUse && userToUse.avatarUrl) {
       setAvatarPreview(userToUse.avatarUrl);
     }
-  }, [user, loading, hasLocalAvatarPreview]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, hasLocalAvatarPreview]);
 
   // Fetch company data when opening Company tab (company_admin only)
   useEffect(() => {
@@ -194,20 +198,29 @@ export default function SettingsPage() {
   useEffect(() => {
     console.log('useEffect - loading:', loading, 'user:', user, 'hasLocalAvatarPreview:', hasLocalAvatarPreview);
     if (hasLocalAvatarPreview) return; // do not override local avatar preview
+    
+    // Skip population if we just saved (fields already have correct values)
+    if (skipNextPopulate.current) {
+      skipNextPopulate.current = false;
+      return;
+    }
+    
     populateProfileFields();
-  }, [user, loading, hasLocalAvatarPreview, populateProfileFields]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading, hasLocalAvatarPreview]);
 
   // Ensure profile fields are populated when switching to profile tab
   useEffect(() => {
-    if (active === "profile" && isAuthenticated && !loading) {
+    if (active === "profile" && isAuthenticated && !loading && !hasInitializedProfile.current) {
       console.log('Switched to profile tab, ensuring data is populated. hasLocalAvatarPreview:', hasLocalAvatarPreview);
+      hasInitializedProfile.current = true;
       
       // Populate only if not showing a local avatar preview
       if (!hasLocalAvatarPreview) {
         populateProfileFields();
       }
       
-      // Always fetch fresh data when switching to profile tab to ensure we have the latest
+      // Fetch fresh data only once when first opening profile tab
       const fetchFreshUserData = async () => {
         try {
           console.log('Fetching fresh user data for profile tab...');
@@ -229,7 +242,9 @@ export default function SettingsPage() {
       
       fetchFreshUserData();
     }
-  }, [active, isAuthenticated, loading, user, hasLocalAvatarPreview, populateProfileFields, setUser]);
+  // Only run when switching tabs or auth state changes, not on every user change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, isAuthenticated, loading]);
 
   const onLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -302,6 +317,9 @@ export default function SettingsPage() {
         address: profileAddress?.trim() || undefined,
       };
       const updatedUser = await userService.updateMe(payload);
+      
+      // Skip the next populate since fields already have the correct values
+      skipNextPopulate.current = true;
       
       // Update user context with new data
       if (user && updatedUser) {

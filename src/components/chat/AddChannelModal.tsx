@@ -170,8 +170,12 @@ export default function AddChannelModal({ isOpen, onClose }: AddChannelModalProp
         name: channelName,
         type: formData.type,
         participantIds: formData.selectedMembers,
-        isPrivate: formData.isPrivate,
       };
+
+      // Only add isPrivate for group and project channels, not for direct
+      if (formData.type !== 'direct') {
+        payload.isPrivate = formData.isPrivate;
+      }
 
       if (formData.type === 'project' && formData.projectId) {
         payload.projectId = formData.projectId;
