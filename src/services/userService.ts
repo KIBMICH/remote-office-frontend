@@ -40,7 +40,7 @@ export const userService = {
   },
   uploadAvatar: async (file: File) => {
     try {
-      console.log('Uploading avatar file:', file.name, 'Size:', file.size, 'Type:', file.type);
+    
       
       // Validate file size (10MB limit)
       if (file.size > 10 * 1024 * 1024) {
@@ -54,18 +54,15 @@ export const userService = {
       
       const form = new FormData();
       form.append("avatar", file);
-      console.log('Making PATCH request to users/avatar with field name "avatar"');
-      console.log('FormData contents:', Array.from(form.entries()));
+      
       
       // Check if token exists
       const token = localStorage.getItem("token");
-      console.log('Auth token exists:', !!token);
-      console.log('Token preview:', token ? `${token.substring(0, 20)}...` : 'No token');
+      
       
       // Log the full URL being called
-      const baseURL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/api` : "http://localhost:3001/api";
-      console.log('API Base URL:', baseURL);
-      console.log('Full avatar upload URL:', `${baseURL}/users/avatar`);
+      
+      
       
       // Use PATCH method as specified in API documentation with extended timeout for file upload
       const { data } = await api.patch<UserResponse>("users/avatar", form, {
@@ -76,7 +73,7 @@ export const userService = {
         },
         timeout: 60000, // 60 seconds for file upload
       });
-      console.log('Avatar upload successful:', data);
+    
       return data;
     } catch (err: unknown) {
       // Narrow unknown error

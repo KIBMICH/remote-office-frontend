@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useChatContext } from '@/context/ChatContext';
 import ChatHeader from '@/components/chat/ChatHeader';
 import MessageList from '@/components/chat/MessageList';
@@ -12,9 +12,16 @@ interface ChatMainProps {
 }
 
 export default function ChatMain({ onBackToSidebar, showBackButton }: ChatMainProps) {
-  const { state } = useChatContext();
+  const { state, loadMessages } = useChatContext();
 
   const activeChannel = state.channels.find(channel => channel.id === state.activeChannelId);
+
+  // Load messages when active channel changes
+  useEffect(() => {
+    if (activeChannel?.id) {
+      loadMessages(activeChannel.id);
+    }
+  }, [activeChannel?.id, loadMessages]);
 
   if (!activeChannel) {
     return (

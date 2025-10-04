@@ -2,15 +2,21 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { ChatState, ChatChannel, Message, User, TypingIndicator } from '@/types/chat';
+import { chatService } from '@/services/chatService';
+import { useAuthContext } from '@/context/AuthContext';
 
 interface ChatContextType {
   state: ChatState;
   setActiveChannel: (channelId: string) => void;
-  sendMessage: (content: string, channelId: string) => void;
+  sendMessage: (content: string, channelId: string) => Promise<void>;
   searchChannels: (query: string) => void;
   markAsRead: (channelId: string) => void;
   addTypingIndicator: (indicator: TypingIndicator) => void;
   removeTypingIndicator: (channelId: string, userId: string) => void;
+  refreshChannels: () => Promise<void>;
+  loadMessages: (channelId: string) => Promise<void>;
+  deleteMessage: (messageId: string, channelId: string) => Promise<void>;
+  editMessage: (messageId: string, content: string, channelId: string) => Promise<void>;
 }
 
 type ChatAction =
@@ -22,7 +28,9 @@ type ChatAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_SEARCH_QUERY'; payload: string }
   | { type: 'MARK_AS_READ'; payload: string }
-  | { type: 'UPDATE_CHANNEL'; payload: ChatChannel };
+  | { type: 'UPDATE_CHANNEL'; payload: ChatChannel }
+  | { type: 'DELETE_MESSAGE'; payload: { channelId: string; messageId: string } }
+  | { type: 'UPDATE_MESSAGE'; payload: { channelId: string; messageId: string; content: string } };
 
 const initialState: ChatState = {
   channels: [],
@@ -90,6 +98,30 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
         ),
       };
     
+    case 'DELETE_MESSAGE':
+      return {
+        ...state,
+        messages: {
+          ...state.messages,
+          [action.payload.channelId]: (state.messages[action.payload.channelId] || []).filter(
+            msg => msg.id !== action.payload.messageId
+          ),
+        },
+      };
+    
+    case 'UPDATE_MESSAGE':
+      return {
+        ...state,
+        messages: {
+          ...state.messages,
+          [action.payload.channelId]: (state.messages[action.payload.channelId] || []).map(
+            msg => msg.id === action.payload.messageId
+              ? { ...msg, content: action.payload.content, isEdited: true }
+              : msg
+          ),
+        },
+      };
+    
     default:
       return state;
   }
@@ -99,153 +131,90 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(chatReducer, initialState);
+  const { user } = useAuthContext();
+  const [isInitialized, setIsInitialized] = React.useState(false);
 
-  // Mock data initialization
+  // Initialize with real data from API
   useEffect(() => {
-    // Initialize with mock data
-    const mockUser: User = {
-      id: 'current-user',
-      name: 'Current User',
-      email: 'user@example.com',
-      status: 'online',
+    const initializeChat = async () => {
+      // Only initialize once when user is available
+      if (!user || isInitialized || state.isLoading) return;
+
+      // TEMPORARY: Skip initialization if rate limited (comment out after rate limit resets)
+      // Uncomment the line below to disable auto-loading during development
+      // return;
+
+      setIsInitialized(true);
+
+      // Set current user
+      const currentUser: User = {
+        id: user.id,
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+        status: 'online',
+      };
+      dispatch({ type: 'SET_CURRENT_USER', payload: currentUser });
+
+      // Fetch channels from API with rate limit protection
+      try {
+        dispatch({ type: 'SET_LOADING', payload: true });
+        const channelsResponse = await chatService.getChannels();
+        const channels = channelsResponse.map(chatService.convertChannelResponse);
+        dispatch({ type: 'SET_CHANNELS', payload: channels });
+      } catch (error: any) {
+        console.error('Error loading channels:', error);
+        
+        // Handle rate limit error - set empty channels to prevent UI break
+        if (error?.response?.status === 429) {
+          console.warn('⚠️ Rate limit exceeded. Please wait a few minutes before refreshing.');
+          console.warn('The chat will be available once the rate limit resets.');
+          dispatch({ type: 'SET_CHANNELS', payload: [] });
+        } else {
+          // For other errors, also set empty channels
+          dispatch({ type: 'SET_CHANNELS', payload: [] });
+        }
+      } finally {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
     };
 
-    const mockChannels: ChatChannel[] = [
-      {
-        id: 'general',
-        name: '#general',
-        type: 'group',
-        participants: [
-          mockUser,
-          { id: 'alice', name: 'Alice Johnson', email: 'alice@example.com', status: 'online' },
-          { id: 'bob', name: 'Bob Smith', email: 'bob@example.com', status: 'online' },
-        ],
-        unreadCount: 0,
-        lastMessage: {
-          id: 'msg1',
-          content: 'Project update meeting at 2 PM',
-          senderId: 'alice',
-          sender: { id: 'alice', name: 'Alice Johnson', email: 'alice@example.com', status: 'online' },
-          timestamp: new Date('2024-01-01T10:20:00'),
-          type: 'text',
-        },
-      },
-      {
-        id: 'marketing-campaign',
-        name: '#marketing-campaign',
-        type: 'group',
-        participants: [
-          mockUser,
-          { id: 'alice', name: 'Alice Johnson', email: 'alice@example.com', status: 'online' },
-        ],
-        unreadCount: 0,
-        lastMessage: {
-          id: 'msg2',
-          content: 'Review our latest marketing campaign.',
-          senderId: 'alice',
-          sender: { id: 'alice', name: 'Alice Johnson', email: 'alice@example.com', status: 'online' },
-          timestamp: new Date('2024-01-01T09:15:00'),
-          type: 'text',
-        },
-      },
-      {
-        id: 'project-launchpad',
-        name: '#project-launchpad',
-        type: 'project',
-        participants: [
-          mockUser,
-          { id: 'alice', name: 'Alice Johnson', email: 'alice@example.com', status: 'online' },
-          { id: 'bob', name: 'Bob Smith', email: 'bob@example.com', status: 'online' },
-        ],
-        unreadCount: 1,
-        projectId: 'proj-1',
-        lastMessage: {
-          id: 'msg3',
-          content: 'Review our latest launch timeline.',
-          senderId: 'bob',
-          sender: { id: 'bob', name: 'Bob Smith', email: 'bob@example.com', status: 'online' },
-          timestamp: new Date('2024-01-01T08:45:00'),
-          type: 'text',
-        },
-      },
-      {
-        id: 'random',
-        name: '#random',
-        type: 'group',
-        participants: [mockUser],
-        unreadCount: 0,
-        lastMessage: {
-          id: 'msg4',
-          content: 'Share your favorite productivity hacks!',
-          senderId: 'current-user',
-          sender: mockUser,
-          timestamp: new Date('2024-01-01T07:30:00'),
-          type: 'text',
-        },
-      },
-    ];
-
-    dispatch({ type: 'SET_CURRENT_USER', payload: mockUser });
-    dispatch({ type: 'SET_CHANNELS', payload: mockChannels });
-    dispatch({ type: 'SET_ACTIVE_CHANNEL', payload: 'project-launchpad' });
-
-    // Mock messages for active channel
-    const mockMessages: Message[] = [
-      {
-        id: 'msg1',
-        content: 'My tasks are all done! Uploading the final report now.',
-        senderId: 'alice',
-        sender: { id: 'alice', name: 'Alice Johnson', email: 'alice@example.com', status: 'online' },
-        timestamp: new Date('2024-01-01T08:20:00'),
-        type: 'text',
-      },
-      {
-        id: 'msg2',
-        content: 'Great work, Alice! My end is also complete. Ready for launch!',
-        senderId: 'bob',
-        sender: { id: 'bob', name: 'Bob Smith', email: 'bob@example.com', status: 'online' },
-        timestamp: new Date('2024-01-01T08:30:00'),
-        type: 'text',
-      },
-      {
-        id: 'msg3',
-        content: 'Excellent! Let\'s aim for a smooth launch. I\'ll send out the final confirmation shortly.',
-        senderId: 'current-user',
-        sender: mockUser,
-        timestamp: new Date('2024-01-01T08:33:00'),
-        type: 'text',
-      },
-    ];
-
-    dispatch({ type: 'SET_MESSAGES', payload: { channelId: 'project-launchpad', messages: mockMessages } });
-  }, []);
+    initializeChat();
+  }, [user, isInitialized, state.isLoading]);
 
   const setActiveChannel = (channelId: string) => {
     dispatch({ type: 'SET_ACTIVE_CHANNEL', payload: channelId });
     dispatch({ type: 'MARK_AS_READ', payload: channelId });
   };
 
-  const sendMessage = (content: string, channelId: string) => {
+  const sendMessage = async (content: string, channelId: string) => {
     if (!state.currentUser || !content.trim()) return;
 
-    const newMessage: Message = {
-      id: `msg-${Date.now()}`,
-      content: content.trim(),
-      senderId: state.currentUser.id,
-      sender: state.currentUser,
-      timestamp: new Date(),
-      type: 'text',
-    };
+    try {
+      const messageResponse = await chatService.sendMessage(channelId, {
+        content: content.trim(),
+        type: 'text',
+      });
 
-    dispatch({ type: 'ADD_MESSAGE', payload: { channelId, message: newMessage } });
+      const newMessage = chatService.convertMessageResponse(messageResponse);
+      dispatch({ type: 'ADD_MESSAGE', payload: { channelId, message: newMessage } });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
   };
 
   const searchChannels = (query: string) => {
     dispatch({ type: 'SET_SEARCH_QUERY', payload: query });
   };
 
-  const markAsRead = (channelId: string) => {
-    dispatch({ type: 'MARK_AS_READ', payload: channelId });
+  const markAsRead = async (channelId: string) => {
+    try {
+      await chatService.markAsRead(channelId);
+      dispatch({ type: 'MARK_AS_READ', payload: channelId });
+    } catch (error) {
+      console.error('Error marking as read:', error);
+    }
   };
 
   const addTypingIndicator = (_indicator: TypingIndicator) => {
@@ -254,6 +223,63 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const removeTypingIndicator = (_channelId: string, _userId: string) => {
     // Implementation for removing typing indicators
+  };
+
+  const refreshChannels = async () => {
+    // Prevent multiple simultaneous refresh calls
+    if (state.isLoading) {
+      console.warn('Already loading channels, skipping refresh');
+      return;
+    }
+
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const channelsResponse = await chatService.getChannels();
+      const channels = channelsResponse.map(chatService.convertChannelResponse);
+      dispatch({ type: 'SET_CHANNELS', payload: channels });
+    } catch (error: any) {
+      console.error('Error refreshing channels:', error);
+      
+      // Handle rate limit error
+      if (error?.response?.status === 429) {
+        console.warn('Rate limit exceeded. Please wait before refreshing again.');
+      }
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  const loadMessages = async (channelId: string) => {
+    try {
+      const messagesResponse = await chatService.getMessages(channelId, {
+        limit: 50,
+        offset: 0,
+      });
+      const messages = messagesResponse.map(chatService.convertMessageResponse);
+      dispatch({ type: 'SET_MESSAGES', payload: { channelId, messages } });
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const deleteMessage = async (messageId: string, channelId: string) => {
+    try {
+      await chatService.deleteMessage(messageId);
+      dispatch({ type: 'DELETE_MESSAGE', payload: { channelId, messageId } });
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      throw error;
+    }
+  };
+
+  const editMessage = async (messageId: string, content: string, channelId: string) => {
+    try {
+      await chatService.editMessage(messageId, { content });
+      dispatch({ type: 'UPDATE_MESSAGE', payload: { channelId, messageId, content } });
+    } catch (error) {
+      console.error('Error editing message:', error);
+      throw error;
+    }
   };
 
   return (
@@ -266,6 +292,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         markAsRead,
         addTypingIndicator,
         removeTypingIndicator,
+        refreshChannels,
+        loadMessages,
+        deleteMessage,
+        editMessage,
       }}
     >
       {children}

@@ -3,6 +3,7 @@
 import React from 'react';
 import { ChatChannel } from '@/types/chat';
 import Avatar from '@/components/ui/Avatar';
+import { useChatContext } from '@/context/ChatContext';
 
 interface ChatHeaderProps {
   channel: ChatChannel;
@@ -11,9 +12,11 @@ interface ChatHeaderProps {
 }
 
 export default function ChatHeader({ channel, onBackToSidebar, showBackButton }: ChatHeaderProps) {
+  const { state } = useChatContext();
+  
   const getChannelDisplayName = () => {
-    if (channel.type === 'direct' && channel.participants.length === 2) {
-      return channel.participants.find(p => p.id !== 'current-user')?.name || 'Unknown User';
+    if (channel.type === 'direct' && channel.participants.length >= 2) {
+      return channel.participants.find(p => p.id !== state.currentUser?.id)?.name || 'Unknown User';
     }
     return channel.name;
   };
@@ -35,10 +38,10 @@ export default function ChatHeader({ channel, onBackToSidebar, showBackButton }:
           </button>
         )}
         <div className="relative">
-          {channel.type === 'direct' && channel.participants.length === 2 ? (
+          {channel.type === 'direct' && channel.participants.length >= 2 ? (
             <Avatar
-              src={channel.participants.find(p => p.id !== 'current-user')?.avatarUrl}
-              fallback={channel.participants.find(p => p.id !== 'current-user')?.name?.charAt(0)}
+              src={channel.participants.find(p => p.id !== state.currentUser?.id)?.avatarUrl}
+              fallback={channel.participants.find(p => p.id !== state.currentUser?.id)?.name?.charAt(0)}
               size="md"
             />
           ) : (
