@@ -162,11 +162,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         const channelsResponse = await chatService.getChannels();
         const channels = channelsResponse.map(chatService.convertChannelResponse);
         dispatch({ type: 'SET_CHANNELS', payload: channels });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error loading channels:', error);
+        const errorData = error as { response?: { status?: number } };
         
         // Handle rate limit error - set empty channels to prevent UI break
-        if (error?.response?.status === 429) {
+        if (errorData?.response?.status === 429) {
           console.warn('⚠️ Rate limit exceeded. Please wait a few minutes before refreshing.');
           console.warn('The chat will be available once the rate limit resets.');
           dispatch({ type: 'SET_CHANNELS', payload: [] });
@@ -237,11 +238,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const channelsResponse = await chatService.getChannels();
       const channels = channelsResponse.map(chatService.convertChannelResponse);
       dispatch({ type: 'SET_CHANNELS', payload: channels });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error refreshing channels:', error);
+      const errorData = error as { response?: { status?: number } };
       
       // Handle rate limit error
-      if (error?.response?.status === 429) {
+      if (errorData?.response?.status === 429) {
         console.warn('Rate limit exceeded. Please wait before refreshing again.');
       }
     } finally {

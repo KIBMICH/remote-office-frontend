@@ -17,7 +17,7 @@ export default function ProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
-  const [filters, setFilters] = useState<TaskFilters>({
+  const [filters] = useState<TaskFilters>({
     page: 1,
     limit: 50,
     sortBy: "dueDate",
@@ -52,10 +52,12 @@ export default function ProjectsPage() {
   useEffect(() => {
     fetchTasks();
     fetchSupportingData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     fetchTasks();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
   // Convert TaskResponse to Task format for BoardColumn component
@@ -83,6 +85,7 @@ export default function ProjectsPage() {
     setIsModalOpen(false);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleTaskStatusUpdate = async (taskId: string, newStatus: "todo" | "in_progress" | "done") => {
     try {
       await taskService.updateTaskStatus(taskId, { status: newStatus });

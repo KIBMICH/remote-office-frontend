@@ -56,8 +56,7 @@ export const userService = {
       form.append("avatar", file);
       
       
-      // Check if token exists
-      const token = localStorage.getItem("token");
+      // Token is automatically added by axios interceptor
       
       
       // Log the full URL being called

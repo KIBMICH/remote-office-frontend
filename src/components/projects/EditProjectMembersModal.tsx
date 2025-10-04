@@ -48,6 +48,7 @@ export default function EditProjectMembersModal({
     if (isOpen && project) {
       fetchTeamMembers();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, project]);
 
   const fetchTeamMembers = async () => {

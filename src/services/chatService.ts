@@ -7,7 +7,6 @@ import {
   CreateChannelPayload,
   SendMessagePayload,
   EditMessagePayload,
-  MessagesResponse,
 } from "@/types/chat";
 
 /**

@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
-  const [supportingDataLoading, setSupportingDataLoading] = useState(true);
+  const [, setSupportingDataLoading] = useState(true);
 
   // Fetch supporting data for task creation
   const fetchSupportingData = async () => {

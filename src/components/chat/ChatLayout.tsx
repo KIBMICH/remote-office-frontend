@@ -7,7 +7,7 @@ import ChatMain from '@/components/chat/ChatMain';
 
 export default function ChatLayout() {
   const [showSidebar, setShowSidebar] = useState(true);
-  const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
+  const [, setSelectedChannel] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
   // Check if we're on mobile

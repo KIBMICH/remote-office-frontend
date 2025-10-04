@@ -90,12 +90,13 @@ export default function AddChannelModal({ isOpen, onClose }: AddChannelModalProp
           status: u.status || 'offline' as const
         }));
         setSearchResults(usersWithStatus);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error searching users:', error);
-        console.error('Error details:', error?.response?.data || error?.message);
+        const errorData = error as { response?: { data?: unknown; status?: number }; message?: string };
+        console.error('Error details:', errorData?.response?.data || errorData?.message);
         
         // Show error toast for rate limit or other errors
-        if (error?.response?.status === 429) {
+        if (errorData?.response?.status === 429) {
           toastError('Rate limit exceeded. Please wait before searching again.');
         }
         setSearchResults([]);
@@ -188,17 +189,18 @@ export default function AddChannelModal({ isOpen, onClose }: AddChannelModalProp
       }
       
       handleCancel();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating channel:', error);
-      console.error('Error details:', error?.response?.data || error?.message);
+      const errorData = error as { response?: { data?: { message?: string }; status?: number }; message?: string };
+      console.error('Error details:', errorData?.response?.data || errorData?.message);
       
       // Show specific error message
-      if (error?.response?.status === 429) {
+      if (errorData?.response?.status === 429) {
         toastError('Rate limit exceeded. Please wait a few minutes and try again.');
-      } else if (error?.response?.status === 403) {
+      } else if (errorData?.response?.status === 403) {
         toastError('You do not have permission to create this type of channel.');
-      } else if (error?.response?.data?.message) {
-        toastError(error.response.data.message);
+      } else if (errorData?.response?.data?.message) {
+        toastError(errorData.response.data.message);
       } else {
         toastError('Failed to create channel. Please try again.');
       }
