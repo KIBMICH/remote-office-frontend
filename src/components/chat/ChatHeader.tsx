@@ -25,6 +25,32 @@ export default function ChatHeader({ channel, onBackToSidebar, showBackButton }:
     return channel.participants.filter(p => p.status === 'online').length;
   };
 
+  const getDirectChatPartner = () => {
+    return channel.participants.find(p => p.id !== state.currentUser?.id);
+  };
+
+  const isPartnerOnline = () => {
+    const partner = getDirectChatPartner();
+    return partner?.status === 'online';
+  };
+
+  const getStatusText = () => {
+    const partner = getDirectChatPartner();
+    if (!partner) return 'Offline';
+    
+    switch (partner.status) {
+      case 'online':
+        return 'Online';
+      case 'away':
+        return 'Away';
+      case 'busy':
+        return 'Busy';
+      case 'offline':
+      default:
+        return 'Offline';
+    }
+  };
+
   return (
     <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-800 bg-black">
       <div className="flex items-center gap-3">
@@ -49,7 +75,7 @@ export default function ChatHeader({ channel, onBackToSidebar, showBackButton }:
               <span className="text-lg font-semibold text-gray-300">#</span>
             </div>
           )}
-          {channel.type === 'direct' && channel.isOnline && (
+          {channel.type === 'direct' && isPartnerOnline() && (
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-black rounded-full"></div>
           )}
         </div>
@@ -60,7 +86,7 @@ export default function ChatHeader({ channel, onBackToSidebar, showBackButton }:
           </h2>
           <p className="text-xs md:text-sm text-gray-400 truncate">
             {channel.type === 'direct' 
-              ? channel.isOnline ? 'Online' : 'Offline'
+              ? getStatusText()
               : `${getOnlineCount()} online • ${channel.participants.length} members`
             }
           </p>
