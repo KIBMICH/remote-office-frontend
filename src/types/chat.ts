@@ -42,6 +42,7 @@ export interface ChannelResponse {
     email: string;
     avatarUrl?: string;
     role?: string;
+    status?: 'online' | 'offline' | 'away';
   }[];
   lastMessage?: MessageResponse;
   unreadCount: number;

@@ -150,7 +150,8 @@ export const convertChannelResponse = (channel: ChannelResponse) => ({
     name: p.name,
     email: p.email,
     avatarUrl: p.avatarUrl,
-    status: "offline" as const,
+    // Use status from API if available, otherwise default to offline
+    status: (p as { status?: 'online' | 'offline' | 'away' }).status || "offline" as const,
   })),
   lastMessage: channel.lastMessage
     ? convertMessageResponse(channel.lastMessage)
