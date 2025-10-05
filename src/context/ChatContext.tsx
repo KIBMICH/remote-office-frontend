@@ -148,13 +148,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(chatReducer, initialState);
   const { user } = useAuthContext();
   const [isInitialized, setIsInitialized] = React.useState(false);
+  const initializingRef = React.useRef(false);
 
   // Initialize with real data from API
   useEffect(() => {
     const initializeChat = async () => {
       // Only initialize once when user is available
-      if (!user || isInitialized || state.isLoading) return;
+      if (!user || isInitialized || state.isLoading || initializingRef.current) return;
 
+      initializingRef.current = true;
       setIsInitialized(true);
 
       // Set current user (always needed for chat to work)
@@ -223,15 +225,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         const channels = channelsResponse.map(chatService.convertChannelResponse);
         dispatch({ type: 'SET_CHANNELS', payload: channels });
       } catch (error: unknown) {
-        console.error('Error loading channels:', error);
         const errorData = error as { response?: { status?: number } };
         
         // Handle rate limit error - set empty channels to prevent UI break
         if (errorData?.response?.status === 429) {
-          console.warn('⚠️ Rate limit exceeded. Please wait a few minutes before refreshing.');
-          console.warn('The chat will be available once the rate limit resets.');
+          console.warn('⚠️ Chat Rate Limit: Too many requests. The backend is temporarily blocking requests.');
+          console.warn('💡 Solution: Wait 1-2 minutes before refreshing. Chat will auto-recover when limit resets.');
           dispatch({ type: 'SET_CHANNELS', payload: [] });
         } else {
+          console.error('Error loading channels:', error);
           // For other errors, also set empty channels
           dispatch({ type: 'SET_CHANNELS', payload: [] });
         }
