@@ -173,7 +173,7 @@ export default function MessageInput({ channelId }: MessageInputProps) {
               <EmojiIcon className="w-5 h-5" />
             </button>
 
-            {/* Emoji Picker Popup */}
+          
             {showEmojiPicker && (
               <div 
                 ref={emojiPickerRef}
