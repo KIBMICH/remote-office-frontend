@@ -1,8 +1,13 @@
 "use client";
 
 import React, { useState, useRef, KeyboardEvent } from 'react';
+import dynamic from 'next/dynamic';
+import { Theme, EmojiStyle } from 'emoji-picker-react';
 import { useChatContext } from '@/context/ChatContext';
 import Button from '@/components/ui/Button';
+
+// Dynamically import emoji picker to avoid SSR issues
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 interface MessageInputProps {
   channelId: string;
@@ -12,7 +17,10 @@ export default function MessageInput({ channelId }: MessageInputProps) {
   const { sendMessage } = useChatContext();
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
 
   const handleSend = () => {
     if (message.trim()) {
@@ -55,6 +63,71 @@ export default function MessageInput({ channelId }: MessageInputProps) {
     }
   };
 
+  const handleEmojiClick = (emojiData: { emoji: string }) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = message;
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+    const newText = before + emojiData.emoji + after;
+
+    setMessage(newText);
+    setIsTyping(newText.length > 0);
+
+    // Close emoji picker on mobile after selection
+    if (isMobile) {
+      setShowEmojiPicker(false);
+    }
+
+    // Set cursor position after emoji
+    setTimeout(() => {
+      textarea.focus();
+      const newPosition = start + emojiData.emoji.length;
+      textarea.setSelectionRange(newPosition, newPosition);
+    }, 0);
+  };
+
+  const toggleEmojiPicker = () => {
+    setShowEmojiPicker(!showEmojiPicker);
+  };
+
+  // Detect mobile screen size
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
+
+  // Close emoji picker when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(event.target as Node)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEmojiPicker]);
+
   return (
     <div className="border-t border-gray-800 bg-black">
       <div className="p-3 md:p-4">
@@ -84,24 +157,51 @@ export default function MessageInput({ channelId }: MessageInputProps) {
               placeholder="Type your message..."
               className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 pr-12 text-white placeholder-gray-400 resize-none focus:outline-none focus:border-blue-500 transition-colors"
               rows={1}
-              style={{ minHeight: '44px', maxHeight: '120px' }}
+              style={{ 
+                minHeight: '44px', 
+                maxHeight: '120px',
+                fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif'
+              }}
             />
             
             {/* Emoji Button */}
-            <button className="absolute right-3 bottom-3 text-gray-400 hover:text-gray-300 transition-colors">
+            <button 
+              type="button"
+              onClick={toggleEmojiPicker}
+              className="absolute right-3 bottom-3 text-gray-400 hover:text-yellow-400 active:text-yellow-500 transition-colors touch-manipulation p-1"
+            >
               <EmojiIcon className="w-5 h-5" />
             </button>
+
+            {/* Emoji Picker Popup */}
+            {showEmojiPicker && (
+              <div 
+                ref={emojiPickerRef}
+                className="fixed md:absolute bottom-20 md:bottom-full left-2 right-2 md:left-auto md:right-0 mb-0 md:mb-2 z-50 shadow-2xl rounded-lg overflow-hidden"
+              >
+                <EmojiPicker
+                  onEmojiClick={handleEmojiClick}
+                  theme={Theme.DARK}
+                  width={isMobile ? Math.min(window.innerWidth - 16, 350) : 320}
+                  height={isMobile ? 350 : 400}
+                  searchPlaceHolder="Search emoji..."
+                  previewConfig={{ showPreview: false }}
+                  emojiStyle={EmojiStyle.NATIVE}
+                />
+              </div>
+            )}
           </div>
 
           {/* Send Button */}
           <div className="flex-shrink-0">
-            <Button
+            <button
+              type="button"
               onClick={handleSend}
               disabled={!message.trim()}
-              className="w-10 h-10 p-0 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg"
+              className="w-10 h-10 md:w-11 md:h-11 flex items-center justify-center bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors touch-manipulation"
             >
-              <SendIcon className="w-5 h-5" />
-            </Button>
+              <SendIcon className="w-5 h-5 text-white" />
+            </button>
           </div>
         </div>
 
