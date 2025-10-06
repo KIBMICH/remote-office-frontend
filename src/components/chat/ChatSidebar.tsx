@@ -204,62 +204,65 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
   };
 
   return (
-    <div className="w-full md:w-80 bg-black border-r border-gray-800 flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-800">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-semibold text-white">Chats</h1>
-          <div className="flex gap-2">
-            <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-              <PhoneIcon className="w-5 h-5 text-gray-400" />
-            </button>
-            <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-              <VideoIcon className="w-5 h-5 text-gray-400" />
-            </button>
-            <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-              <DotsIcon className="w-5 h-5 text-gray-400" />
-            </button>
+    <div className="w-full md:w-80 bg-black border-r border-gray-800 flex flex-col h-full overflow-hidden">
+      {/* Fixed Header Section */}
+      <div className="flex-shrink-0">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-800">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-xl font-semibold text-white">Chats</h1>
+            <div className="flex gap-2">
+              <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+                <PhoneIcon className="w-5 h-5 text-gray-400" />
+              </button>
+              <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+                <VideoIcon className="w-5 h-5 text-gray-400" />
+              </button>
+              <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+                <DotsIcon className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search chats..."
+              className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              value={state.searchQuery}
+              onChange={(e) => searchChannels(e.target.value)}
+            />
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search chats..."
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-            value={state.searchQuery}
-            onChange={(e) => searchChannels(e.target.value)}
-          />
+        {/* Tabs */}
+        <div className="px-4 py-2 border-b border-gray-800">
+          <div className="flex gap-1 bg-gray-900 rounded-lg p-1">
+            {[
+              { key: 'all', label: 'All' },
+              { key: 'unread', label: 'Unread' },
+              { key: 'favorites', label: 'Favorites' },
+              { key: 'groups', label: 'Groups' },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as 'all' | 'unread' | 'favorites' | 'groups')}
+                className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  activeTab === tab.key
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="px-4 py-2 border-b border-gray-800">
-        <div className="flex gap-1 bg-gray-900 rounded-lg p-1">
-          {[
-            { key: 'all', label: 'All' },
-            { key: 'unread', label: 'Unread' },
-            { key: 'favorites', label: 'Favorites' },
-            { key: 'groups', label: 'Groups' },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as 'all' | 'unread' | 'favorites' | 'groups')}
-              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                activeTab === tab.key
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Channels List */}
+      {/* Scrollable Channels List */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-2">
           <div className="flex items-center justify-between px-2 py-2">
