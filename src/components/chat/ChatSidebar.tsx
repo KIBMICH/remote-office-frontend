@@ -61,7 +61,6 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
         
         // Handle rate limit gracefully - stop making requests
         if (errorData?.response?.status === 429) {
-          console.warn('⚠️ Rate limit exceeded for user search. Feature temporarily disabled.');
           setIsRateLimited(true);
         }
         setSearchResults([]);
@@ -100,19 +99,8 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
           participantIds: [userId],
         };
         
-        console.log('Creating direct channel with payload:', JSON.stringify(payload, null, 2));
-        console.log('Payload type check:', {
-          name: typeof payload.name,
-          type: typeof payload.type,
-          participantIds: Array.isArray(payload.participantIds),
-          participantIdsLength: payload.participantIds.length,
-          firstParticipantId: payload.participantIds[0]
-        });
-        
         // Create new DM - direct channels don't need isPrivate field
         const newChannel = await chatService.createChannel(payload);
-        
-        console.log('Direct channel created:', newChannel);
         
         // Refresh channels to get the new DM
         if (refreshChannels) {
@@ -128,10 +116,7 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
         setSearchResults([]);
       }
     } catch (error) {
-      console.error('Error creating direct message:', error);
       const errorData = error as { response?: { data?: unknown; status?: number; statusText?: string } };
-      console.error('Error status:', errorData?.response?.status);
-      console.error('Error details:', errorData?.response?.data);
       
       // Show specific error message based on status
       if (errorData?.response?.status === 400) {
@@ -159,7 +144,6 @@ export default function ChatSidebar({ onChannelSelect }: ChatSidebarProps) {
                 toastError('Please refresh the page to see your existing chat with this user.');
               }
             } catch (refreshError) {
-              console.error('Error refreshing channels:', refreshError);
               toastError('Please refresh the page to see your existing chat with this user.');
             }
           } else {
