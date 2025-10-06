@@ -38,14 +38,25 @@ export default function ChatMain({ onBackToSidebar, showBackButton }: ChatMainPr
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-black w-full">
-      <ChatHeader 
-        channel={activeChannel} 
-        onBackToSidebar={onBackToSidebar}
-        showBackButton={showBackButton}
-      />
-      <MessageList channelId={activeChannel.id} />
-      <MessageInput channelId={activeChannel.id} />
+    <div className="flex-1 flex flex-col bg-black w-full h-full overflow-hidden">
+      {/* Fixed Header */}
+      <div className="flex-shrink-0">
+        <ChatHeader 
+          channel={activeChannel} 
+          onBackToSidebar={onBackToSidebar}
+          showBackButton={showBackButton}
+        />
+      </div>
+      
+      {/* Scrollable Messages Area */}
+      <div className="flex-1 overflow-hidden">
+        <MessageList channelId={activeChannel.id} />
+      </div>
+      
+      {/* Fixed Input at Bottom */}
+      <div className="flex-shrink-0">
+        <MessageInput channelId={activeChannel.id} />
+      </div>
     </div>
   );
 }
