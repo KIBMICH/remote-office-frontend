@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="bg-black text-gray-400 py-10 px-6">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-          <h3 className="text-white font-bold text-lg">RemoteHub</h3>
+          <h3 className="text-white font-bold text-lg">Remortify</h3>
           <p className="mt-2 text-sm">
             Virtual office platform for distributed teams. Collaborate
             seamlessly with chat, video calls, file sharing, and task
@@ -42,7 +42,7 @@ export default function Footer() {
       </div>
 
       <p className="text-center text-xs mt-8">
-        © 2025 RemoteHub. All rights reserved.
+        © 2025 Remortify. All rights reserved.
       </p>
     </footer>
   );
