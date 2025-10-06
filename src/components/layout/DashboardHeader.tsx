@@ -24,8 +24,12 @@ export default function DashboardHeader({ onMenuClick }: Props) {
               <path d="M4 7h16M4 12h16M4 17h16" />
             </svg>
           </button>
-          <div className="bg-blue-600 w-8 h-8 rounded flex items-center justify-center text-xs font-bold">RH</div>
-          <span className="font-semibold text-white">RemoteHub</span>
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded overflow-hidden">
+              <img src="/remote_logo.png" alt="Remortify" className="w-full h-full object-contain" />
+            </div>
+            <span className="font-semibold text-white text-lg -ml-1">Remortify</span>
+          </div>
         </div>
 
         {/* Right: Search + icons */}

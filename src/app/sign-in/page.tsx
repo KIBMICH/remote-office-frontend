@@ -97,14 +97,13 @@ function SignInForm() {
   return (
     <main className="min-h-screen bg-black flex flex-col items-center pt-10">
       {/* Top centered image/logo */}
-      <div className="w-24 h-24 rounded-md overflow-hidden mb-0 shadow-lg">
-        {/* Replace src with your desired image */}
+      <div className="w-32 h-32 rounded-md overflow-hidden mb-0 shadow-lg">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/signup_logo.png" alt="RemoteHub" className="w-full h-full object-cover bg-black" />
+        <img src="/remote_logo.png" alt="Remortify" className="w-full h-full object-contain bg-black" />
       </div>
 
       <AuthTabs />
-      <AuthCard title="Welcome Back" subtitle="Sign in to your RemoteHub account">
+      <AuthCard title="Welcome Back" subtitle="Sign in to your Remortify account">
         <form className="flex flex-col gap-5" onSubmit={onSubmit}>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
@@ -225,12 +224,12 @@ export default function SignInPage() {
   return (
     <Suspense fallback={
       <main className="min-h-screen bg-black flex flex-col items-center pt-10">
-        <div className="w-24 h-24 rounded-md overflow-hidden mb-0 shadow-lg">
+        <div className="w-32 h-32 rounded-md overflow-hidden mb-0 shadow-lg">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/signup_logo.png" alt="RemoteHub" className="w-full h-full object-cover bg-black" />
+          <img src="/remote_logo.png" alt="Remortify" className="w-full h-full object-contain bg-black" />
         </div>
         <AuthTabs />
-        <AuthCard title="Welcome Back" subtitle="Sign in to your RemoteHub account">
+        <AuthCard title="Welcome Back" subtitle="Sign in to your Remortify account">
           <div className="flex justify-center py-8">
             <Spinner size={24} />
           </div>

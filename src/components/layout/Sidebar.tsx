@@ -31,9 +31,11 @@ export default function Sidebar({ showHeader = true, onClose }: SidebarProps) {
     <div className="flex h-full w-64 flex-col bg-black border-r border-gray-800">
       {showHeader && (
         <div className="flex h-16 items-center px-4 border-b border-gray-800 justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-600 w-8 h-8 rounded flex items-center justify-center text-xs font-bold">RH</div>
-            <span className="font-semibold text-white">RemoteHub</span>
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded overflow-hidden">
+              <img src="/remote_logo.png" alt="Remortify" className="w-full h-full object-contain" />
+            </div>
+            <span className="font-semibold text-white text-lg -ml-1">Remortify</span>
           </div>
           {onClose && (
             <button onClick={onClose} aria-label="Close menu" className="md:hidden inline-flex items-center justify-center h-8 w-8 rounded-lg border border-gray-800 text-gray-300 hover:bg-gray-900">
@@ -71,7 +73,7 @@ export default function Sidebar({ showHeader = true, onClose }: SidebarProps) {
       </nav>
       
       <div className="mt-auto p-4 space-y-3 border-t border-gray-800">
-        <button className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">
+        <button className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm">
           <PlusIcon className="w-4 h-4" />
           <span>Create New Task</span>
         </button>

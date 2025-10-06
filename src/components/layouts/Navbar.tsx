@@ -27,12 +27,12 @@ export default function Navbar() {
       <div className="bg-gray-950 text-white px-6 py-4 flex justify-between items-center">
         {/* Left side - Logo and Navigation */}
         <div className="flex items-center space-x-8">
-          {/* Logo with "Link" text */}
-          <div className="flex items-center space-x-2">
-            <div className="bg-blue-600 w-8 h-8 rounded flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">Link</span>
+          {/* Logo */}
+          <div className="flex items-center">
+            <div className="w-12 h-12 rounded overflow-hidden">
+              <img src="/remote_logo.png" alt="Remortify" className="w-full h-full object-contain" />
             </div>
-            <span className="text-xl font-bold text-white">Remortify</span>
+            <span className="text-xl font-bold text-white -ml-2">Remortify</span>
           </div>
           
           {/* Desktop Navigation Links */}
@@ -79,7 +79,7 @@ export default function Navbar() {
                 <Link href="/sign-in" className="px-4 py-2 text-sm rounded-lg border border-gray-700 text-gray-200 hover:bg-gray-800 transition-colors">
                   Sign In
                 </Link>
-                <Link href="/sign-up" className="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                <Link href="/sign-up" className="px-4 py-2 text-sm rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-colors">
                   Sign Up
                 </Link>
               </>
@@ -172,7 +172,7 @@ export default function Navbar() {
                 <Link href="/sign-in" className="px-3 py-2 text-sm rounded-lg border border-gray-700 text-gray-200 hover:bg-gray-800 transition-colors" onClick={() => setIsMenuOpen(false)}>
                   Sign In
                 </Link>
-                <Link href="/sign-up" className="px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors" onClick={() => setIsMenuOpen(false)}>
+                <Link href="/sign-up" className="px-3 py-2 text-sm rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-colors" onClick={() => setIsMenuOpen(false)}>
                   Sign Up
                 </Link>
               </div>
