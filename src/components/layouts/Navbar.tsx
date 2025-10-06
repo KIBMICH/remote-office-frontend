@@ -29,7 +29,7 @@ export default function Navbar() {
         <div className="flex items-center space-x-8">
           {/* Logo */}
           <div className="flex items-center">
-            <div className="w-12 h-12 rounded overflow-hidden">
+            <div className="w-10 h-10 rounded overflow-hidden">
               <img src="/remote_logo.png" alt="Remortify" className="w-full h-full object-contain" />
             </div>
             <span className="text-xl font-bold text-white -ml-2">Remortify</span>
