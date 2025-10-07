@@ -33,7 +33,9 @@ export default function TwoFASetupPage() {
               <li>Scan the QR code in your account security settings (placeholder).</li>
               <li>Enter the 6-digit code to verify.</li>
             </ol>
-            <Button onClick={() => setStep("verify")} className="w-full bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => setStep("verify")}  
+            variant="secondary"
+            className="w-full h-10 rounded-md !bg-blue-600 hover:!bg-blue-700 !text-white font-semibold disabled:opacity-60 disabled:cursor-not-allowed">
               Continue
             </Button>
           </div>

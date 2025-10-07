@@ -77,7 +77,7 @@ export default function Sidebar({ showHeader = true, onClose }: SidebarProps) {
           <PlusIcon className="w-4 h-4" />
           <span>Create New Task</span>
         </button>
-        <button className="w-full flex items-center justify-center gap-2 bg-sky-600/80 hover:bg-sky-600 text-white px-3 py-2 rounded-lg text-sm">
+        <button className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">
           <PlayIcon className="w-4 h-4" />
           <span>Start Meeting</span>
         </button>

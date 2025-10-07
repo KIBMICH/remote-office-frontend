@@ -174,7 +174,8 @@ function SignInForm() {
           )}
           <Button
             type="submit"
-            className="w-full h-10 rounded-md bg-blue-600 hover:bg-blue-700 font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+            variant="secondary"
+            className="w-full h-10 rounded-md !bg-blue-600 hover:!bg-blue-700 !text-white font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? (

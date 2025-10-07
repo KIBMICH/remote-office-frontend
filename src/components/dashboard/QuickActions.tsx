@@ -15,7 +15,7 @@ export default function QuickActions({ onCreateTask }: QuickActionsProps) {
         <PlusIcon className="w-5 h-5" />
         Create New Task
       </Button>
-      <Button className="justify-center gap-3 bg-emerald-600 hover:bg-emerald-700">
+      <Button variant="secondary" className="justify-center gap-3 !bg-blue-600 hover:!bg-blue-700 !text-white">
         <PlayIcon className="w-5 h-5" />
         Start New Meeting
       </Button>

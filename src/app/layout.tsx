@@ -16,12 +16,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Remortify - Remote Work Management Platform",
+  title: "Remortify",
   description: "Streamline your remote work with Remortify - the all-in-one platform for team collaboration, project management, and productivity.",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
-      { url: "/remote_logo.png", type: "image/png", sizes: "192x192" }
+      { url: "/favicon.ico", sizes: "16x16" },
+      { url: "/remote_logo.png", type: "image/png", sizes: "32x32" }
     ],
     shortcut: "/favicon.ico",
     apple: "/remote_logo.png",
@@ -36,8 +36,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/remote_logo.png" type="image/png" />
+        <link rel="icon" href="/favicon.ico" sizes="16x16" type="image/x-icon" />
+        <link rel="icon" href="/remote_logo.png" type="image/png" sizes="32x32" />
         <link rel="apple-touch-icon" href="/remote_logo.png" />
       </head>
       <body

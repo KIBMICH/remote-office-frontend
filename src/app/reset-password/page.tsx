@@ -34,7 +34,10 @@ export default function ResetPasswordPage() {
             }}
           >
             <Input type="email" placeholder="name@company.com" label="Email" />
-            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+            <Button
+             type="submit" 
+             variant="secondary"
+            className="w-full h-10 rounded-md !bg-blue-600 hover:!bg-blue-700 !text-white font-semibold disabled:opacity-60 disabled:cursor-not-allowed">
               Send reset link
             </Button>
           </form>
