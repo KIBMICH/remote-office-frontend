@@ -38,7 +38,7 @@ export default function ChatLayout() {
 
   return (
     <ChatProvider>
-      <div className="flex h-full bg-black text-white relative overflow-hidden">
+      <div className="flex h-full min-h-0 bg-black text-white relative overflow-hidden">
         {/* Sidebar - Full width on mobile when visible, fixed width on desktop */}
         <div className={`
           ${showSidebar || !isMobile ? 'flex' : 'hidden'} 
@@ -56,6 +56,7 @@ export default function ChatLayout() {
         <div className={`
           ${!showSidebar || !isMobile ? 'flex' : 'hidden'} 
           flex-1 
+          min-h-0
           transition-all duration-300 ease-in-out
           ${isMobile && showSidebar ? 'absolute inset-0' : ''}
         `}>

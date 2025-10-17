@@ -49,7 +49,7 @@ export default function ChatMain({ onBackToSidebar, showBackButton }: ChatMainPr
       </div>
       
       {/* Scrollable Messages Area */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden min-h-0">
         <MessageList channelId={activeChannel.id} />
       </div>
       
