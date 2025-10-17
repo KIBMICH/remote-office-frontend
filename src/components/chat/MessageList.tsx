@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { useChatContext } from '@/context/ChatContext';
 import { Message } from '@/types/chat';
-import Avatar from '@/components/ui/Avatar';
+// Avatar removed to match WhatsApp-style (no initials next to messages)
 
 interface MessageListProps {
   channelId: string;
@@ -12,15 +12,43 @@ interface MessageListProps {
 export default function MessageList({ channelId }: MessageListProps) {
   const { state } = useChatContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isUserNearBottomRef = useRef<boolean>(true);
   const messages = useMemo(() => state.messages[channelId] || [], [state.messages, channelId]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Prefer container scroll when available to avoid layout quirks
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+      return
+    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Only autoscroll if user is already near bottom
+    if (isUserNearBottomRef.current) {
+      scrollToBottom();
+    }
   }, [messages]);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      isUserNearBottomRef.current = distanceFromBottom < 80; // px threshold
+    };
+
+    // Initialize near-bottom state and ensure initial scroll to bottom
+    onScroll();
+    scrollToBottom();
+
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => container.removeEventListener('scroll', onScroll);
+  }, []);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', {
@@ -84,7 +112,7 @@ export default function MessageList({ channelId }: MessageListProps) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
+    <div ref={scrollContainerRef} className="flex-1 h-full overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
       {messages.map((message, index) => {
         const previousMessage = index > 0 ? messages[index - 1] : undefined;
         const showDateSeparator = shouldShowDateSeparator(message, previousMessage);
@@ -105,42 +133,23 @@ export default function MessageList({ channelId }: MessageListProps) {
             
             <div className={`flex gap-3 ${isGrouped ? 'mt-1' : 'mt-4'}`}>
               <div className="flex-shrink-0">
-                {!isGrouped ? (
-                  <Avatar
-                    src={message.sender.avatarUrl}
-                    fallback={message.sender.name.charAt(0)}
-                    size="sm"
-                  />
-                ) : (
-                  <div className="w-8 h-8 flex items-center justify-center">
-                    <span className="text-xs text-gray-500">
-                      {formatTime(new Date(message.timestamp))}
-                    </span>
-                  </div>
-                )}
+                <div className="w-8 h-8" />
               </div>
               
               <div className="flex-1 min-w-0">
-                {!isGrouped && (
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="font-semibold text-white text-sm">
-                      {message.sender.name}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {formatTime(new Date(message.timestamp))}
-                    </span>
-                  </div>
-                )}
-                
+                {/* Timestamp will be shown inside the bubble at the top */}
                 <div className={`${isCurrentUser ? 'ml-auto max-w-[85%] sm:max-w-[70%]' : 'max-w-[90%] sm:max-w-[85%]'}`}>
                   {message.type === 'text' ? (
                     <div
                       className={`rounded-lg px-3 py-2 ${
                         isCurrentUser
-                          ? 'bg-blue-600 text-white ml-auto'
+                          ? 'bg-blue-800 text-white ml-auto'
                           : 'bg-gray-800 text-gray-100'
                       }`}
                     >
+                      <div className={`text-[10px] mb-1 ${isCurrentUser ? 'text-white/60' : 'text-gray-400'} text-right`}>
+                        {formatTime(new Date(message.timestamp))}
+                      </div>
                       <p className="text-sm whitespace-pre-wrap break-words">
                         {message.content}
                       </p>
@@ -150,6 +159,9 @@ export default function MessageList({ channelId }: MessageListProps) {
                     </div>
                   ) : message.type === 'file' ? (
                     <div className="bg-gray-800 rounded-lg p-3 border border-gray-700">
+                      <div className="text-[10px] mb-1 text-gray-400 text-right">
+                        {formatTime(new Date(message.timestamp))}
+                      </div>
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
                           <FileIcon className="w-5 h-5 text-gray-400" />
