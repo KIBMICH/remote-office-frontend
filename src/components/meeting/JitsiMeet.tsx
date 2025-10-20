@@ -108,7 +108,7 @@ export default function JitsiMeet({
 
   const handleMeetingEnd = useCallback(async () => {
     try {
-      // Make POST request to backend
+      // Make POST request to backend (optional - don't fail if backend is unavailable)
       const response = await fetch(`/api/meetings/end/${encodeURIComponent(roomName)}`, {
         method: "POST",
         headers: {
@@ -121,10 +121,12 @@ export default function JitsiMeet({
       });
 
       if (!response.ok) {
-        console.warn("Failed to notify backend of meeting end:", response.statusText);
+        console.warn("Backend unavailable - meeting end not logged:", response.statusText);
+      } else {
+        console.log("Meeting end logged successfully");
       }
     } catch (error) {
-      console.error("Error notifying backend of meeting end:", error);
+      console.warn("Backend unavailable - meeting end not logged:", error);
     } finally {
       onMeetingEnd?.(roomName);
     }
@@ -141,6 +143,7 @@ export default function JitsiMeet({
       // Retry a few times in case the ref hasn't attached yet or props aren't ready
       if (initRetryRef.current < 20) {
         initRetryRef.current += 1;
+        console.log(`Retrying Jitsi init (attempt ${initRetryRef.current}/20)...`);
         setTimeout(() => {
           initializeJitsi();
         }, 250);
@@ -151,6 +154,9 @@ export default function JitsiMeet({
       }
       return;
     }
+
+    // Reset retry counter on successful initialization
+    initRetryRef.current = 0;
 
     try {
       // Clean up existing instance
