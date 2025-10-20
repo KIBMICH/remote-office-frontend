@@ -2,7 +2,7 @@
 import React from "react";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "outline";
+  variant?: "primary" | "secondary" | "outline" | "success";
   size?: "sm" | "md" | "lg";
 };
 
@@ -18,7 +18,8 @@ export default function Button({
   const variants = {
     primary: "bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800",
     secondary: "bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400",
-    outline: "border-2 border-current text-current hover:bg-current hover:text-white active:opacity-80"
+    outline: "border-2 border-current text-current hover:bg-current hover:text-white active:opacity-80",
+    success: "bg-green-600 text-white hover:bg-green-700 active:bg-green-800"
   };
   
   const sizes = {

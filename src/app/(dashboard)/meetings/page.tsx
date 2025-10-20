@@ -95,14 +95,14 @@ export default function MeetingPage() {
   return (
     <div className="flex h-[calc(100vh-2rem)] flex-col gap-4 p-4 sm:p-6">
       {/* Header with meeting controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Meetings</h1>
           <p className="text-gray-400">Join or create video meetings</p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-2 flex-wrap w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               onClick={() => setViewMode("meetings")}
               variant={viewMode === "meetings" ? "primary" : "outline"}
@@ -119,7 +119,7 @@ export default function MeetingPage() {
             </Button>
           </div>
           
-          <Button onClick={() => setShowCreateModal(true)} variant="primary" size="sm">
+          <Button onClick={() => setShowCreateModal(true)} variant="success" size="sm" className="shrink-0">
             Create Meeting
           </Button>
         </div>
@@ -153,7 +153,7 @@ export default function MeetingPage() {
                 <p className="text-gray-400 mb-6">
                   Create your first meeting to get started
                 </p>
-                <Button onClick={() => setShowCreateModal(true)} variant="primary">
+                <Button onClick={() => setShowCreateModal(true)} variant="success">
                   Create Meeting
                 </Button>
               </div>
@@ -174,11 +174,11 @@ export default function MeetingPage() {
 
       {/* Demo view */}
       {viewMode === "demo" && (
-        <div className="grid flex-1 gap-4 sm:gap-6" style={{ gridTemplateColumns: "1fr 360px" }}>
-          <div className="min-w-0">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6">
+          <div className="min-w-0 order-1">
             <VideoGrid participants={demoParticipants} />
           </div>
-          <div className="hidden lg:block min-w-0">
+          <div className="min-w-0 order-2 hidden lg:block">
             <ChatPanel initialMessages={demoMessages} />
           </div>
         </div>
@@ -186,7 +186,7 @@ export default function MeetingPage() {
 
       {/* Demo control bar */}
       {viewMode === "demo" && (
-        <div className="mx-auto w-full max-w-4xl">
+        <div className="mx-auto w-full max-w-4xl px-0 sm:px-2">
           <ControlBar />
         </div>
       )}

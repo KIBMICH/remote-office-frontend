@@ -417,7 +417,7 @@ export default function JitsiMeet({
 
       {/* Loading state */}
       {isLoading && (
-        <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-20">
+        <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-20 px-4">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
             <p className="text-white text-lg">Joining meeting...</p>
@@ -438,8 +438,8 @@ export default function JitsiMeet({
       {/* Jitsi container */}
       <div 
         ref={jitsiContainerRef} 
-        className="w-full h-full min-h-[600px]"
-        style={{ minHeight: "600px" }}
+        className="w-full h-full min-h-[420px] sm:min-h-[520px] md:min-h-[600px]"
+        style={{ minHeight: "420px" }}
       />
     </div>
   );
