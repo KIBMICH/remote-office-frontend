@@ -20,6 +20,7 @@ import {
   checkPermissions,
   createJitsiConfig,
   setupVideoSizing,
+  removeJitsiBranding,
   initializeVideoStyles,
   handleMeetingEnd,
   requestMediaPermissions,
@@ -272,6 +273,9 @@ export default function JitsiMeet({
 
       // Apply video sizing fixes
       setupVideoSizing(containerElement);
+
+      // Remove Jitsi branding
+      removeJitsiBranding(containerElement);
 
       // Inject global styles
       initializeVideoStyles();

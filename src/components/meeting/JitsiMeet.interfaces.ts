@@ -44,7 +44,7 @@ export interface JitsiMeetConfig {
     localRecording?: boolean;
     p2p?: {
       enabled: boolean;
-      stunServers: Array<{ urls: string }>;
+      stunServers: readonly { urls: string }[];
     };
     analytics?: {
       disabled: boolean;

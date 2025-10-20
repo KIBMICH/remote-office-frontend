@@ -77,6 +77,78 @@ export const setupVideoSizing = (containerElement: HTMLElement): void => {
   );
 };
 
+// Dynamic branding removal utility
+export const removeJitsiBranding = (containerElement: HTMLElement): void => {
+  const hideJitsiElements = () => {
+    const iframe = containerElement.querySelector('iframe[src*="meet.jit.si"]');
+    if (!iframe) return;
+
+    try {
+      const iframeElement = iframe as HTMLIFrameElement;
+      const iframeDoc = iframeElement.contentDocument || iframeElement.contentWindow?.document;
+      if (!iframeDoc) return;
+
+      // Hide any elements containing Jitsi branding
+      const jitsiSelectors = [
+        '[class*="jitsi"]',
+        '[id*="jitsi"]',
+        '[class*="logo"]',
+        '[id*="logo"]',
+        '[class*="brand"]',
+        '[id*="brand"]',
+        '[class*="watermark"]',
+        '[id*="watermark"]',
+        '[class*="branding"]',
+        '[id*="branding"]',
+        '[data-testid*="jitsi"]',
+        '[data-testid*="logo"]',
+        '[aria-label*="jitsi"]',
+        '[aria-label*="Jitsi"]',
+        '[title*="jitsi"]',
+        '[title*="Jitsi"]',
+        'img[src*="jitsi"]',
+        'img[alt*="jitsi"]',
+        'svg[class*="jitsi"]',
+        'div[class*="jitsi"]',
+        'span[class*="jitsi"]',
+        'h1[class*="jitsi"]',
+        'h2[class*="jitsi"]',
+        'h3[class*="jitsi"]',
+        'p[class*="jitsi"]',
+        'a[class*="jitsi"]'
+      ];
+
+      jitsiSelectors.forEach(selector => {
+        const elements = iframeDoc.querySelectorAll(selector);
+        elements.forEach((element: Element) => {
+          const htmlElement = element as HTMLElement;
+          if (htmlElement.textContent?.toLowerCase().includes('jitsi') || 
+              htmlElement.className?.toLowerCase().includes('jitsi') ||
+              htmlElement.id?.toLowerCase().includes('jitsi')) {
+            htmlElement.style.display = 'none';
+            htmlElement.style.visibility = 'hidden';
+            htmlElement.style.opacity = '0';
+            htmlElement.style.height = '0';
+            htmlElement.style.width = '0';
+            htmlElement.style.position = 'absolute';
+            htmlElement.style.left = '-9999px';
+            htmlElement.style.top = '-9999px';
+          }
+        });
+      });
+    } catch (error) {
+      // Cross-origin restrictions might prevent access
+      console.log('Cannot access iframe content for branding removal:', error);
+    }
+  };
+
+  // Run immediately and then periodically
+  hideJitsiElements();
+  [500, 1000, 2000, 3000, 5000].forEach(delay => 
+    setTimeout(hideJitsiElements, delay)
+  );
+};
+
 export const initializeVideoStyles = (): void => {
   injectGlobalStyles();
 };

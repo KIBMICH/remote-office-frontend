@@ -117,38 +117,63 @@ export const injectGlobalStyles = (): void => {
       height: 100% !important;
     }
     
-    /* Hide all Jitsi branding and logos */
-    iframe[src*="meet.jit.si"] * {
+    /* Hide all Jitsi branding and logos - including pre-join screen */
+    iframe[src*="meet.jit.si"] *,
+    iframe[src*="meet.jit.si"] body *,
+    iframe[src*="meet.jit.si"] div * {
       /* Hide Jitsi logo in video area */
       [class*="jitsi-logo"],
       [class*="jitsi-watermark"],
       [class*="watermark"],
       [class*="logo"],
+      [class*="brand"],
+      [class*="branding"],
       [id*="jitsi-logo"],
       [id*="jitsi-watermark"],
       [id*="watermark"],
       [id*="logo"],
+      [id*="brand"],
+      [id*="branding"],
       .jitsi-logo,
       .jitsi-watermark,
       .watermark,
       .logo,
+      .brand,
+      .branding,
       [data-testid*="jitsi-logo"],
       [data-testid*="watermark"],
+      [data-testid*="logo"],
+      [data-testid*="brand"],
       [aria-label*="Jitsi"],
+      [aria-label*="jitsi"],
       [title*="Jitsi"],
+      [title*="jitsi"],
       img[src*="jitsi"],
+      img[src*="Jitsi"],
       img[alt*="Jitsi"],
       img[alt*="jitsi"],
       .powered-by,
       .powered-by-jitsi,
       [class*="powered"],
-      [id*="powered"] {
+      [id*="powered"],
+      /* Additional selectors for newer Jitsi versions */
+      [class*="leftwatermark"],
+      [class*="rightwatermark"],
+      [class*="topwatermark"],
+      [class*="bottomwatermark"],
+      [id*="leftwatermark"],
+      [id*="rightwatermark"],
+      [id*="topwatermark"],
+      [id*="bottomwatermark"] {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
         height: 0 !important;
         width: 0 !important;
         overflow: hidden !important;
+        position: absolute !important;
+        left: -9999px !important;
+        top: -9999px !important;
       }
     }
     
@@ -161,6 +186,49 @@ export const injectGlobalStyles = (): void => {
       .jitsi-branding {
         display: none !important;
       }
+    }
+    
+    /* Specific targeting for pre-join screen logo */
+    iframe[src*="meet.jit.si"] body div[class*="prejoin"],
+    iframe[src*="meet.jit.si"] body div[class*="left-panel"],
+    iframe[src*="meet.jit.si"] body div[class*="welcome"],
+    iframe[src*="meet.jit.si"] body div[class*="meeting"],
+    iframe[src*="meet.jit.si"] body div[class*="header"],
+    iframe[src*="meet.jit.si"] body div[class*="logo"],
+    iframe[src*="meet.jit.si"] body div[class*="brand"],
+    iframe[src*="meet.jit.si"] body div[class*="branding"],
+    iframe[src*="meet.jit.si"] body div[class*="jitsi"],
+    iframe[src*="meet.jit.si"] body span[class*="logo"],
+    iframe[src*="meet.jit.si"] body span[class*="brand"],
+    iframe[src*="meet.jit.si"] body span[class*="jitsi"],
+    iframe[src*="meet.jit.si"] body h1[class*="logo"],
+    iframe[src*="meet.jit.si"] body h2[class*="logo"],
+    iframe[src*="meet.jit.si"] body h3[class*="logo"],
+    iframe[src*="meet.jit.si"] body p[class*="logo"],
+    iframe[src*="meet.jit.si"] body a[class*="logo"],
+    iframe[src*="meet.jit.si"] body img[class*="logo"],
+    iframe[src*="meet.jit.si"] body svg[class*="logo"],
+    iframe[src*="meet.jit.si"] body [class*="jitsi-logo"],
+    iframe[src*="meet.jit.si"] body [class*="jitsi-brand"],
+    iframe[src*="meet.jit.si"] body [class*="jitsi-branding"],
+    iframe[src*="meet.jit.si"] body [id*="jitsi-logo"],
+    iframe[src*="meet.jit.si"] body [id*="jitsi-brand"],
+    iframe[src*="meet.jit.si"] body [id*="jitsi-branding"],
+    iframe[src*="meet.jit.si"] body [data-testid*="jitsi-logo"],
+    iframe[src*="meet.jit.si"] body [data-testid*="logo"],
+    iframe[src*="meet.jit.si"] body [aria-label*="jitsi"],
+    iframe[src*="meet.jit.si"] body [aria-label*="Jitsi"],
+    iframe[src*="meet.jit.si"] body [title*="jitsi"],
+    iframe[src*="meet.jit.si"] body [title*="Jitsi"] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      height: 0 !important;
+      width: 0 !important;
+      overflow: hidden !important;
+      position: absolute !important;
+      left: -9999px !important;
+      top: -9999px !important;
     }
     
     /* More aggressive hiding for Jitsi logos in video area */
@@ -205,6 +273,24 @@ export const injectGlobalStyles = (): void => {
       }
     }
     
+    /* Additional aggressive hiding for any remaining Jitsi text */
+    iframe[src*="meet.jit.si"] body * {
+      /* Hide any element that might contain Jitsi text */
+      &:has-text("jitsi"),
+      &:has-text("Jitsi"),
+      &:has-text("JITSI") {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        width: 0 !important;
+        overflow: hidden !important;
+        position: absolute !important;
+        left: -9999px !important;
+        top: -9999px !important;
+      }
+    }
+    
     /* Add Remotify branding to replace Jitsi logo */
     iframe[src*="meet.jit.si"] body::before {
       content: "🏢 Remotify" !important;
@@ -214,29 +300,60 @@ export const injectGlobalStyles = (): void => {
       z-index: 9999 !important;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
       color: white !important;
-      padding: 10px 18px !important;
+      padding: 12px 20px !important;
       border-radius: 12px !important;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
       font-weight: 700 !important;
       font-size: 16px !important;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
       letter-spacing: 0.8px !important;
       border: 2px solid rgba(255, 255, 255, 0.2) !important;
       backdrop-filter: blur(10px) !important;
+      transition: all 0.3s ease !important;
+      cursor: default !important;
+      user-select: none !important;
+      pointer-events: none !important;
+    }
+    
+    /* Add subtle animation to the branding */
+    iframe[src*="meet.jit.si"] body::before:hover {
+      transform: scale(1.05) !important;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4) !important;
     }
     
     /* Hide the original Jitsi logo area completely */
     iframe[src*="meet.jit.si"] body [class*="leftwatermark"],
+    iframe[src*="meet.jit.si"] body [class*="rightwatermark"],
+    iframe[src*="meet.jit.si"] body [class*="topwatermark"],
+    iframe[src*="meet.jit.si"] body [class*="bottomwatermark"],
     iframe[src*="meet.jit.si"] body [class*="watermark"],
     iframe[src*="meet.jit.si"] body [class*="logo"],
-    iframe[src*="meet.jit.si"] body [id*="logo"],
+    iframe[src*="meet.jit.si"] body [class*="brand"],
     iframe[src*="meet.jit.si"] body [class*="branding"],
-    iframe[src*="meet.jit.si"] body [id*="branding"] {
+    iframe[src*="meet.jit.si"] body [id*="leftwatermark"],
+    iframe[src*="meet.jit.si"] body [id*="rightwatermark"],
+    iframe[src*="meet.jit.si"] body [id*="topwatermark"],
+    iframe[src*="meet.jit.si"] body [id*="bottomwatermark"],
+    iframe[src*="meet.jit.si"] body [id*="watermark"],
+    iframe[src*="meet.jit.si"] body [id*="logo"],
+    iframe[src*="meet.jit.si"] body [id*="brand"],
+    iframe[src*="meet.jit.si"] body [id*="branding"],
+    /* Hide any footer branding */
+    iframe[src*="meet.jit.si"] body footer,
+    iframe[src*="meet.jit.si"] body [class*="footer"],
+    iframe[src*="meet.jit.si"] body [id*="footer"],
+    /* Hide any header branding */
+    iframe[src*="meet.jit.si"] body header,
+    iframe[src*="meet.jit.si"] body [class*="header"],
+    iframe[src*="meet.jit.si"] body [id*="header"] {
       display: none !important;
       visibility: hidden !important;
       opacity: 0 !important;
       height: 0 !important;
       width: 0 !important;
+      position: absolute !important;
+      left: -9999px !important;
+      top: -9999px !important;
     }
   `;
   document.head.appendChild(style);
