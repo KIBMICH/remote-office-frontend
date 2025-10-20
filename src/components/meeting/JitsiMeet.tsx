@@ -104,7 +104,20 @@ export default function JitsiMeet({
   const [isVoiceOnly, setIsVoiceOnly] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [permissionError, setPermissionError] = useState(false);
+  const [containerReady, setContainerReady] = useState(false);
   const initRetryRef = useRef(0);
+
+  // Ref callback to ensure container is ready
+  const containerRefCallback = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      jitsiContainerRef.current = node;
+      setContainerReady(true);
+      console.log("✅ Container ref attached:", node);
+    } else {
+      setContainerReady(false);
+      console.log("❌ Container ref detached");
+    }
+  }, []);
 
   const handleMeetingEnd = useCallback(async () => {
     try {
@@ -133,6 +146,15 @@ export default function JitsiMeet({
   }, [roomName, onMeetingEnd]);
 
   const initializeJitsi = useCallback(async () => {
+    // Debug ref attachment
+    console.log("🔍 Checking requirements:", {
+      container: !!jitsiContainerRef.current,
+      containerElement: jitsiContainerRef.current,
+      containerInDOM: jitsiContainerRef.current?.isConnected,
+      roomName,
+      userName
+    });
+
     if (!jitsiContainerRef.current || !roomName || !userName) {
       console.log("Missing requirements:", {
         container: !!jitsiContainerRef.current,
@@ -327,7 +349,10 @@ export default function JitsiMeet({
       script.async = true;
       script.onload = () => {
         console.log("📡 Jitsi API script loaded");
-        initializeJitsi();
+        // Wait for container to be ready before initializing
+        if (containerReady) {
+          initializeJitsi();
+        }
       };
       script.onerror = () => {
         console.error("❌ Failed to load Jitsi API script");
@@ -344,7 +369,9 @@ export default function JitsiMeet({
     } else {
       // Defer to next tick to ensure the container ref is attached
       setTimeout(() => {
-        initializeJitsi();
+        if (containerReady) {
+          initializeJitsi();
+        }
       }, 0);
     }
 
@@ -356,7 +383,15 @@ export default function JitsiMeet({
         jitsiApiRef.current = null;
       }
     };
-  }, [initializeJitsi, onError, isLoading]);
+  }, [initializeJitsi, onError, isLoading, containerReady]);
+
+  // Separate effect to trigger initialization when container becomes ready
+  useEffect(() => {
+    if (containerReady && window.JitsiMeetExternalAPI && !jitsiApiRef.current) {
+      console.log("🚀 Container ready, initializing Jitsi...");
+      initializeJitsi();
+    }
+  }, [containerReady, initializeJitsi]);
 
   if (hasError) {
     return (
@@ -459,7 +494,7 @@ export default function JitsiMeet({
 
       {/* Jitsi container */}
       <div 
-        ref={jitsiContainerRef} 
+        ref={containerRefCallback} 
         className="w-full h-full min-h-[420px] sm:min-h-[520px] md:min-h-[600px]"
         style={{ minHeight: "420px" }}
       />
