@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Local HTTPS server for development
+server.js
+localhost.pem
+localhost-key.pem
