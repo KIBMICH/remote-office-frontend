@@ -54,6 +54,9 @@ export default function Sidebar({ showHeader = true, onClose }: SidebarProps) {
             <Link
               key={item.name}
               href={item.href}
+              onClick={() => {
+                onClose?.();
+              }}
               className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
                 isActive
                   ? "bg-gray-800 text-white"
@@ -73,11 +76,11 @@ export default function Sidebar({ showHeader = true, onClose }: SidebarProps) {
       </nav>
       
       <div className="mt-auto p-4 space-y-3 border-t border-gray-800">
-        <button className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm">
+        <button onClick={() => { onClose?.(); }} className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm">
           <PlusIcon className="w-4 h-4" />
           <span>Create New Task</span>
         </button>
-        <button onClick={() => router.push('/meeting')} className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">
+        <button onClick={() => { onClose?.(); router.push('/meeting'); }} className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">
           <PlayIcon className="w-4 h-4" />
           <span>Start Meeting</span>
         </button>
@@ -106,7 +109,7 @@ export default function Sidebar({ showHeader = true, onClose }: SidebarProps) {
         
         {/* Logout Button */}
         <button 
-          onClick={handleLogout}
+          onClick={() => { onClose?.(); handleLogout(); }}
           className="w-full mt-3 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer"
         >
           <LogoutIcon className="w-4 h-4" />
