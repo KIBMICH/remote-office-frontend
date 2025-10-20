@@ -23,8 +23,8 @@ export default function DynamicMeetingPage() {
 
   // Generate a safe room name if none provided
   const safeRoomName = roomName || `meeting-${Date.now()}`;
-  // Use authenticated user name if available, otherwise use a default
-  const userName = user?.name || user?.email || `Guest-${Math.random().toString(36).substr(2, 9)}`;
+  // Use authenticated user name if available, otherwise use a stable default
+  const userName = user?.name || user?.email || `Guest-${roomName?.slice(-8) || 'user'}`;
 
   return (
     <div className="min-h-screen bg-gray-950 p-4">

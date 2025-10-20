@@ -3,93 +3,70 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Button from "@/components/ui/Button";
 
-
-interface JitsiEventData {
-  [key: string]: unknown;
-  error?: string;
-  displayName?: string;
-  id?: string;
-}
-
-interface JitsiMeetExternalAPI {
-  dispose: () => void;
-  addEventListener: (event: string, listener: (data: JitsiEventData) => void) => void;
-  removeEventListener: (event: string, listener: (data: JitsiEventData) => void) => void;
-  executeCommand: (command: string, value?: unknown) => void;
-}
-
-interface JitsiMeetConfig {
-  roomName: string;
-  width: string | number;
-  height: string | number;
-  parentNode: HTMLElement;
-  userInfo?: {
-    displayName?: string;
-    email?: string;
-  };
-  configOverwrite?: {
-    startWithAudioMuted?: boolean;
-    startWithVideoMuted?: boolean;
-    startAudioOnly?: boolean;
-    enableWelcomePage?: boolean;
-    enableClosePage?: boolean;
-    enableInsecureRoomNameWarning?: boolean;
-    enableLayerSuspension?: boolean;
-    enableNoisyMicDetection?: boolean;
-    enableTalkWhileMuted?: boolean;
-    enableNoAudioDetection?: boolean;
-    enableJoinWithoutMic?: boolean;
-    enableRembrandt?: boolean;
-    channelLastN?: number;
-    startScreenSharing?: boolean;
-    enableRecording?: boolean;
-    liveStreamingEnabled?: boolean;
-    fileRecordingsEnabled?: boolean;
-    localRecording?: boolean;
-    p2p?: {
-      enabled: boolean;
-      stunServers: Array<{ urls: string }>;
-    };
-    analytics?: {
-      disabled: boolean;
-    };
-    disableRtx?: boolean;
-    enableLipSync?: boolean;
-  };
-  interfaceConfigOverwrite?: {
-    TOOLBAR_BUTTONS?: string[];
-    SETTINGS_SECTIONS?: string[];
-    SHOW_JITSI_WATERMARK?: boolean;
-    SHOW_WATERMARK_FOR_GUESTS?: boolean;
-    SHOW_POWERED_BY?: boolean;
-    SHOW_BRAND_WATERMARK?: boolean;
-    SHOW_POLICY_WATERMARK?: boolean;
-    SHOW_LOBBY_BUTTON?: boolean;
-    SHOW_MEETING_TIMER?: boolean;
-    SHOW_DEEP_LINKING_PAGE?: boolean;
-    SHOW_AUTHENTICATION_PAGE?: boolean;
-    SHOW_WELCOME_PAGE?: boolean;
-    SHOW_CLOSE_PAGE?: boolean;
-    SHOW_PREJOIN_PAGE?: boolean;
-    SHOW_LIVE_STREAMING_PAGE?: boolean;
-    SHOW_RECORDING_PAGE?: boolean;
-    SHOW_TRANSCRIPTION_PAGE?: boolean;
-  };
-}
-
-interface JitsiMeetProps {
-  roomName: string;
-  userName: string;
-  onMeetingEnd?: (roomName: string) => void;
-  onError?: (error: Error) => void;
-  className?: string;
-}
-
-declare global {
-  interface Window {
-    JitsiMeetExternalAPI: new (domain: string, options: JitsiMeetConfig) => JitsiMeetExternalAPI;
-  }
-}
+// Import separated modules
+import { 
+  JitsiMeetProps, 
+  JitsiMeetExternalAPI, 
+  JitsiEventData, 
+  JitsiEventHandlers,
+  JITSI_CONFIG 
+} from "./JitsiMeet.interfaces";
+import { 
+  jitsiStyles, 
+  cssClasses, 
+  applyVideoSizing 
+} from "./JitsiMeet.styles";
+import { 
+  checkPermissions,
+  createJitsiConfig,
+  setupVideoSizing,
+  initializeVideoStyles,
+  handleMeetingEnd,
+  requestMediaPermissions,
+  getPermissionErrorMessage,
+  getJitsiLoadErrorMessage,
+  getMeetingErrorMessage,
+  logContainerInfo,
+  logPermissionStatus,
+  logJitsiInitialization,
+  logApiCreation,
+  logApiSuccess,
+  logScriptLoad,
+  logVideoSizing,
+  logVideoToggle,
+  logVideoTrackAdded,
+  logVideoTrackRemoved,
+  logCameraError,
+  logMicError,
+  logParticipantJoined,
+  logParticipantLeft,
+  logParticipantKicked,
+  logVideoConferenceLeft,
+  logMeetingJoined,
+  logConferenceReady,
+  logMeetingEnd,
+  logJitsiError,
+  logLoadingTimeout,
+  logForcedLoadingEnd,
+  logPermissionGranted,
+  logPermissionDenied,
+  logScriptError,
+  logRetryAttempt,
+  logRetryLimitReached,
+  logContainerNotInDOM,
+  logContainerNeverAttached,
+  logDOMNotReady,
+  logAPIUnavailable,
+  logAPINeverLoaded,
+  logMissingRequirements,
+  logVideoSizingNote,
+  logVideoToggleNote,
+  logVideoToggleError,
+  logPermissionCheckError,
+  logBackendUnavailable,
+  logMeetingEndSuccess,
+  logBackendUnavailableStatus
+} from "./JitsiMeet.utils";
 
 export default function JitsiMeet({
   roomName,
@@ -98,198 +75,112 @@ export default function JitsiMeet({
   onError,
   className = "",
 }: JitsiMeetProps) {
+  // Refs
   const jitsiContainerRef = useRef<HTMLDivElement>(null);
   const jitsiApiRef = useRef<JitsiMeetExternalAPI | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initRetryRef = useRef(0);
+
+  // State
   const [isLoading, setIsLoading] = useState(true);
   const [isVoiceOnly, setIsVoiceOnly] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [permissionError, setPermissionError] = useState(false);
-  const [containerReady, setContainerReady] = useState(false);
-  const initRetryRef = useRef(0);
-  const containerElementRef = useRef<HTMLDivElement | null>(null);
 
-  // Ref callback to ensure container is ready
+  // Callbacks
   const containerRefCallback = useCallback((node: HTMLDivElement | null) => {
     if (node) {
       jitsiContainerRef.current = node;
-      containerElementRef.current = node;
-      setContainerReady(true);
-      console.log("✅ Container ref attached:", node, "In DOM:", node.isConnected);
-    } else {
-      setContainerReady(false);
-      console.log("❌ Container ref detached");
+      logContainerInfo(node);
     }
   }, []);
 
-  const handleMeetingEnd = useCallback(async () => {
-    try {
-      // Make POST request to backend (optional - don't fail if backend is unavailable)
-      const response = await fetch(`/api/meetings/end/${encodeURIComponent(roomName)}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          roomName,
-          endedAt: new Date().toISOString(),
-        }),
-      });
-
-      if (!response.ok) {
-        console.warn("Backend unavailable - meeting end not logged:", response.statusText);
-      } else {
-        console.log("Meeting end logged successfully");
-      }
-    } catch (error) {
-      console.warn("Backend unavailable - meeting end not logged:", error);
-    } finally {
-      onMeetingEnd?.(roomName);
-    }
+  const handleMeetingEndCallback = useCallback(async () => {
+    await handleMeetingEnd(roomName, onMeetingEnd);
   }, [roomName, onMeetingEnd]);
 
-  const initializeJitsi = useCallback(async () => {
-    // Wait for DOM to be ready and container to be attached
-    if (!document.readyState || document.readyState !== 'complete') {
-      console.log("⏳ Waiting for DOM to be ready...");
-      setTimeout(() => initializeJitsi(), 100);
-      return;
+  const clearLoadingTimeout = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
+  }, []);
 
-    // Debug ref attachment
-    console.log("🔍 Checking requirements:", {
-      container: !!jitsiContainerRef.current,
-      containerElement: jitsiContainerRef.current,
-      containerInDOM: jitsiContainerRef.current?.isConnected,
-      roomName,
-      userName,
-      containerReady
-    });
+  const endLoading = useCallback(() => {
+    clearLoadingTimeout();
+    setIsLoading(false);
+    setHasError(false);
+  }, [clearLoadingTimeout]);
 
-    if (!jitsiContainerRef.current || !roomName || !userName) {
-      console.log("Missing requirements:", {
-        container: !!jitsiContainerRef.current,
-        roomName,
-        userName
-      });
-
-      // Retry a few times in case the ref hasn't attached yet or props aren't ready
-      if (initRetryRef.current < 20) {
-        initRetryRef.current += 1;
-        console.log(`Retrying Jitsi init (attempt ${initRetryRef.current}/20)...`);
+  const setupEventListeners = useCallback((api: JitsiMeetExternalAPI) => {
+    const eventHandlers: JitsiEventHandlers = {
+      videoConferenceJoined: () => {
+        logMeetingJoined(roomName);
+        endLoading();
+      },
+      conferenceReady: () => {
+        logConferenceReady(roomName);
+        endLoading();
+        
+        // Ensure video/audio are active
         setTimeout(() => {
-          initializeJitsi();
-        }, 250);
-      } else {
-        console.warn("Jitsi init retry limit reached");
-        setHasError(true);
+          try {
+            api.executeCommand('toggleVideo');
+            api.executeCommand('toggleAudio');
+            logVideoToggle();
+          } catch (error) {
+            logVideoToggleNote();
+          }
+        }, 1000);
+      },
+      videoTrackAdded: (track: JitsiEventData) => {
+        logVideoTrackAdded(track);
         setIsLoading(false);
-      }
-      return;
-    }
-
-    // Check if container is still in DOM
-    if (!jitsiContainerRef.current.isConnected) {
-      console.warn("Container not in DOM, waiting for reattachment...");
-      if (initRetryRef.current < 20) {
-        initRetryRef.current += 1;
+        
         setTimeout(() => {
-          initializeJitsi();
-        }, 250);
-      } else {
-        console.warn("Container never attached to DOM");
-        setHasError(true);
+          try {
+            api.executeCommand('toggleVideo');
+            logVideoToggle();
+          } catch (error) {
+            logVideoToggleError();
+          }
+        }, 500);
+      },
+      videoTrackRemoved: (track: JitsiEventData) => {
+        logVideoTrackRemoved(track);
+      },
+      cameraError: (error: JitsiEventData) => {
+        logCameraError(error);
+        setPermissionError(true);
+        onError?.(new Error("Camera access denied or unavailable"));
+      },
+      micError: (error: JitsiEventData) => {
+        logMicError(error);
+        setPermissionError(true);
+        onError?.(new Error("Microphone access denied or unavailable"));
+      },
+      readyToClose: () => {
+        logMeetingEnd(roomName);
+        handleMeetingEndCallback();
+      },
+      participantJoined: (participant: JitsiEventData) => {
+        logParticipantJoined(participant);
         setIsLoading(false);
-      }
-      return;
-    }
-
-    // Reset retry counter on successful initialization
-    initRetryRef.current = 0;
-
-    try {
-      // Clean up existing instance
-      if (jitsiApiRef.current) {
-        jitsiApiRef.current.dispose();
-        jitsiApiRef.current = null;
-      }
-
-      // Check if JitsiMeetExternalAPI is available
-      if (!window.JitsiMeetExternalAPI) {
-        throw new Error("Jitsi Meet API not loaded. Please check your internet connection.");
-      }
-
-      console.log("Initializing Jitsi for room:", roomName, "user:", userName);
-
-      const domain = "meet.jit.si"; // You can change this to your own Jitsi instance
-      
-      // Use the stable container element
-      const containerElement = containerElementRef.current || jitsiContainerRef.current;
-      if (!containerElement) {
-        throw new Error("Container element not available");
-      }
-
-      const options: JitsiMeetConfig = {
-        roomName: roomName,
-        width: "100%",
-        height: "100%",
-        parentNode: containerElement,
-        userInfo: {
-          displayName: userName,
-        },
-        configOverwrite: {
-          startWithAudioMuted: false,
-          startWithVideoMuted: false,
-          startAudioOnly: isVoiceOnly,
-          enableWelcomePage: false,
-          enableClosePage: false,
-          enableInsecureRoomNameWarning: false,
-        },
-        interfaceConfigOverwrite: {
-          SHOW_JITSI_WATERMARK: false,
-          SHOW_WATERMARK_FOR_GUESTS: false,
-          SHOW_POWERED_BY: false,
-        },
-      };
-
-      console.log("🚀 Creating Jitsi API with options:", options);
-      const api = new window.JitsiMeetExternalAPI(domain, options);
-      jitsiApiRef.current = api;
-      console.log("✅ Jitsi API instance created");
-
-      // Event listeners
-      api.addEventListener("videoConferenceJoined", () => {
-        console.log("✅ Successfully joined meeting:", roomName);
-        setIsLoading(false);
-        setHasError(false);
-      });
-
-      // Also listen for the conference ready event
-      api.addEventListener("conferenceReady", () => {
-        console.log("✅ Conference ready:", roomName);
-        setIsLoading(false);
-        setHasError(false);
-      });
-
-      api.addEventListener("readyToClose", () => {
-        console.log("🔚 Meeting ready to close:", roomName);
-        handleMeetingEnd();
-      });
-
-      api.addEventListener("participantJoined", (participant) => {
-        console.log("👤 Participant joined:", participant);
-      });
-
-      api.addEventListener("participantLeft", (participant) => {
-        console.log("👤 Participant left:", participant);
-      });
-
-
-      api.addEventListener("errorOccurred", (error) => {
-        console.error("Jitsi error:", error);
+      },
+      participantLeft: (participant: JitsiEventData) => {
+        logParticipantLeft(participant);
+      },
+      participantKicked: (participant: JitsiEventData) => {
+        logParticipantKicked(participant);
+      },
+      videoConferenceLeft: () => {
+        logVideoConferenceLeft();
+      },
+      errorOccurred: (error: JitsiEventData) => {
+        logJitsiError(error);
         setHasError(true);
         setIsLoading(false);
         
-        // Check if it's a permission error
         if (error.error && (
           error.error.includes('permission') || 
           error.error.includes('camera') || 
@@ -300,7 +191,93 @@ export default function JitsiMeet({
         }
         
         onError?.(new Error(`Meeting error: ${error.error || "Unknown error"}`));
-      });
+      }
+    };
+
+    Object.entries(eventHandlers).forEach(([event, handler]) => {
+      api.addEventListener(event, handler);
+    });
+  }, [roomName, endLoading, handleMeetingEndCallback, onError]);
+
+  const initializeJitsi = useCallback(async () => {
+    if (document.readyState !== 'complete') {
+      logDOMNotReady();
+      setTimeout(() => initializeJitsi(), 100);
+      return;
+    }
+
+    if (!window.JitsiMeetExternalAPI) {
+      logAPIUnavailable();
+      if (initRetryRef.current < JITSI_CONFIG.INIT_RETRY_LIMIT) {
+        initRetryRef.current += 1;
+        setTimeout(() => initializeJitsi(), 500);
+      } else {
+        logAPINeverLoaded();
+        setHasError(true);
+        setIsLoading(false);
+        onError?.(new Error("Jitsi Meet API failed to load"));
+      }
+      return;
+    }
+
+    if (!jitsiContainerRef.current || !roomName || !userName) {
+      logMissingRequirements(!!jitsiContainerRef.current, roomName, userName);
+
+      if (initRetryRef.current < JITSI_CONFIG.INIT_RETRY_LIMIT) {
+        initRetryRef.current += 1;
+        logRetryAttempt(initRetryRef.current, JITSI_CONFIG.INIT_RETRY_LIMIT);
+        setTimeout(() => initializeJitsi(), 500);
+      } else {
+        logRetryLimitReached();
+        setHasError(true);
+        setIsLoading(false);
+        onError?.(new Error("Failed to initialize meeting - missing requirements"));
+      }
+      return;
+    }
+
+    if (!jitsiContainerRef.current.isConnected) {
+      logContainerNotInDOM();
+      if (initRetryRef.current < JITSI_CONFIG.INIT_RETRY_LIMIT) {
+        initRetryRef.current += 1;
+        setTimeout(() => initializeJitsi(), 500);
+      } else {
+        logContainerNeverAttached();
+        setHasError(true);
+        setIsLoading(false);
+        onError?.(new Error("Meeting container not available"));
+      }
+      return;
+    }
+
+    initRetryRef.current = 0;
+
+    try {
+      // Clean up existing instance
+      if (jitsiApiRef.current) {
+        jitsiApiRef.current.dispose();
+        jitsiApiRef.current = null;
+      }
+
+      logJitsiInitialization(roomName, userName);
+
+      const containerElement = jitsiContainerRef.current;
+      const config = createJitsiConfig(roomName, userName, isVoiceOnly, containerElement);
+      const domain = JITSI_CONFIG.DOMAINS[0];
+
+      logApiCreation(config);
+      const api = new window.JitsiMeetExternalAPI(domain, config);
+      jitsiApiRef.current = api;
+      logApiSuccess();
+
+      // Apply video sizing fixes
+      setupVideoSizing(containerElement);
+
+      // Inject global styles
+      initializeVideoStyles();
+
+      // Setup event listeners
+      setupEventListeners(api);
 
     } catch (error) {
       console.error("Failed to initialize Jitsi:", error);
@@ -308,7 +285,7 @@ export default function JitsiMeet({
       setIsLoading(false);
       onError?.(error as Error);
     }
-  }, [roomName, userName, isVoiceOnly, handleMeetingEnd, onError, containerReady]);
+  }, [roomName, userName, isVoiceOnly, onError, setupEventListeners, endLoading]);
 
   const toggleVoiceOnly = useCallback(() => {
     setIsVoiceOnly(prev => !prev);
@@ -322,124 +299,119 @@ export default function JitsiMeet({
 
   const requestPermissions = useCallback(async () => {
     try {
-      // Request camera permission
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: true, 
-        audio: true 
-      });
+      await requestMediaPermissions();
       
-      // Stop the stream immediately as we just wanted to request permission
-      stream.getTracks().forEach(track => track.stop());
-      
-      console.log("✅ Permissions granted, retrying meeting...");
+      logPermissionGranted();
       setPermissionError(false);
       setHasError(false);
       setIsLoading(true);
       
-      // Retry initialization
-      setTimeout(() => {
-        initializeJitsi();
-      }, 1000);
+      clearLoadingTimeout();
+      setTimeout(() => initializeJitsi(), 1000);
       
     } catch (error) {
-      console.error("❌ Permission denied:", error);
-      onError?.(new Error("Camera/microphone access denied. Please allow permissions and try again."));
+      logPermissionDenied(error);
+      onError?.(new Error(getMeetingErrorMessage()));
     }
-  }, [initializeJitsi, onError]);
+  }, [initializeJitsi, onError, clearLoadingTimeout]);
 
+  const retryMeeting = useCallback(() => {
+    setHasError(false);
+    setIsLoading(true);
+    setPermissionError(false);
+    initRetryRef.current = 0;
+    clearLoadingTimeout();
+    initializeJitsi();
+  }, [initializeJitsi, clearLoadingTimeout]);
+
+  // Main effect
   useEffect(() => {
-    // Check browser permissions first
-    const checkPermissions = async () => {
-      try {
-        const permissions = await navigator.permissions.query({ name: 'camera' as PermissionName });
-        console.log("Camera permission:", permissions.state);
-        
-        const micPermission = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-        console.log("Microphone permission:", micPermission.state);
-      } catch (error) {
-        console.log("Could not check permissions:", error);
-      }
-    };
+    let script: HTMLScriptElement | null = null;
 
-    checkPermissions();
+    clearLoadingTimeout();
 
-    // Set a timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      if (isLoading) {
-        console.warn("⚠️ Jitsi loading timeout - check browser permissions");
+    const initializeMeeting = async () => {
+      const permissionsOk = await checkPermissions();
+      if (!permissionsOk) {
+        setPermissionError(true);
         setHasError(true);
         setIsLoading(false);
-        setPermissionError(true);
-        onError?.(new Error("Meeting failed to load - please check camera/microphone permissions"));
+        onError?.(new Error(getPermissionErrorMessage()));
+        return;
       }
-    }, 30000); // 30 seconds - meetings can take time to fully initialize
 
-    // Load Jitsi Meet API script if not already loaded
     if (!window.JitsiMeetExternalAPI) {
-      const script = document.createElement("script");
+        script = document.createElement("script");
       script.src = "https://meet.jit.si/external_api.js";
       script.async = true;
       script.onload = () => {
-        console.log("📡 Jitsi API script loaded");
-        // Wait a bit more for DOM to be fully ready
-        setTimeout(() => {
-          initializeJitsi();
-        }, 500);
+          logScriptLoad();
+          clearLoadingTimeout();
+          setTimeout(() => initializeJitsi(), 100);
       };
       script.onerror = () => {
-        console.error("❌ Failed to load Jitsi API script");
+          logScriptError();
+          clearLoadingTimeout();
         setHasError(true);
         setIsLoading(false);
-        onError?.(new Error("Failed to load Jitsi Meet API"));
+          onError?.(new Error(getJitsiLoadErrorMessage()));
       };
       document.head.appendChild(script);
+      } else {
+        clearLoadingTimeout();
+        setTimeout(() => initializeJitsi(), 100);
+      }
+    };
 
-      return () => {
-        clearTimeout(timeoutId);
-        if (document.head.contains(script)) {
-          document.head.removeChild(script);
-        }
-      };
-    } else {
-      // API already loaded, wait for DOM and container to be ready
-      setTimeout(() => {
-        initializeJitsi();
-      }, 500);
-    }
+    // Set timeout
+    timeoutRef.current = setTimeout(() => {
+      if (isLoading) {
+        logLoadingTimeout();
+        setIsLoading(false);
+        logForcedLoadingEnd();
+      }
+    }, JITSI_CONFIG.LOADING_TIMEOUT);
 
-    // Cleanup on unmount
+    initializeMeeting();
+
     return () => {
-      clearTimeout(timeoutId);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (script && document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
       if (jitsiApiRef.current) {
         jitsiApiRef.current.dispose();
         jitsiApiRef.current = null;
       }
     };
-  }, [initializeJitsi, onError, isLoading]);
+  }, [initializeJitsi, onError, isLoading, clearLoadingTimeout]);
 
-
+  // Error state
   if (hasError) {
     return (
       <div className={`flex items-center justify-center min-h-[400px] bg-gray-900 rounded-xl border border-gray-800 ${className}`}>
         <div className="text-center p-6 max-w-md">
           {permissionError ? (
             <>
-              <div className="text-yellow-400 text-2xl mb-4">🔒</div>
-              <h3 className="text-lg font-semibold text-white mb-2">Camera & Microphone Required</h3>
-              <p className="text-gray-400 mb-4">
+              <div className={cssClasses.errorIcon}>🔒</div>
+              <h3 className={cssClasses.errorTitle}>Camera & Microphone Required</h3>
+              <p className={cssClasses.errorMessage}>
                 This meeting requires access to your camera and microphone. Please allow permissions to continue.
               </p>
-              <div className="space-y-3">
-                <Button onClick={requestPermissions} variant="primary" className="w-full">
+              <div className={cssClasses.errorActions}>
+                <Button onClick={requestPermissions} variant="primary" className={cssClasses.button}>
                   Allow Camera & Microphone
                 </Button>
-                <Button onClick={() => window.location.reload()} variant="outline" className="w-full">
+                <Button onClick={() => window.location.reload()} variant="outline" className={cssClasses.button}>
                   Refresh Page
                 </Button>
               </div>
-              <div className="mt-4 text-sm text-gray-500">
+              <div className={cssClasses.errorHelp}>
                 <p>If permissions are already allowed, try:</p>
-                <ul className="text-left mt-2 space-y-1">
+                <ul className={cssClasses.errorList}>
                   <li>• Check your browser&apos;s address bar for blocked permissions</li>
                   <li>• Click the lock icon and allow camera/microphone</li>
                   <li>• Try using Chrome or Firefox</li>
@@ -449,11 +421,16 @@ export default function JitsiMeet({
           ) : (
             <>
               <div className="text-red-400 text-2xl mb-4">⚠️</div>
-              <h3 className="text-lg font-semibold text-white mb-2">Failed to Load Meeting</h3>
-              <p className="text-gray-400 mb-4">There was an error connecting to the meeting.</p>
-              <Button onClick={() => window.location.reload()} variant="primary">
+              <h3 className={cssClasses.errorTitle}>Failed to Load Meeting</h3>
+              <p className={cssClasses.errorMessage}>There was an error connecting to the meeting. This could be due to network issues or browser permissions.</p>
+              <div className={cssClasses.errorActions}>
+                <Button onClick={() => window.location.reload()} variant="primary" className={cssClasses.button}>
                 Retry
               </Button>
+                <Button onClick={retryMeeting} variant="outline" className={cssClasses.button}>
+                  Try Again
+                </Button>
+              </div>
             </>
           )}
         </div>
@@ -461,26 +438,30 @@ export default function JitsiMeet({
     );
   }
 
+  // Main component
   return (
-    <div className={`relative bg-gray-900 rounded-xl border border-gray-800 overflow-hidden ${className}`}>
-      {/* Header with controls */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/70 to-transparent p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+    <div 
+      className={`${cssClasses.container} ${className}`} 
+      style={jitsiStyles.container}
+    >
+      {/* Header */}
+      <div className={cssClasses.header}>
+        <div className={cssClasses.headerContent}>
+          <div className={cssClasses.headerInfo}>
+            <div className={cssClasses.roomBadge}>
               {roomName}
             </div>
-            <div className="text-white text-sm">
+            <div className={cssClasses.userName}>
               {userName}
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className={cssClasses.headerControls}>
             <Button
               onClick={toggleVoiceOnly}
               variant={isVoiceOnly ? "primary" : "outline"}
               size="sm"
-              className="text-white border-white/20 hover:bg-white/10"
+              className={cssClasses.videoButton}
             >
               {isVoiceOnly ? "📞 Voice" : "📹 Video"}
             </Button>
@@ -489,7 +470,7 @@ export default function JitsiMeet({
               onClick={leaveMeeting}
               variant="outline"
               size="sm"
-              className="text-red-400 border-red-400/50 hover:bg-red-400/10"
+              className={cssClasses.leaveButton}
             >
               Leave
             </Button>
@@ -501,33 +482,41 @@ export default function JitsiMeet({
       {isLoading && (
         <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-20 px-4">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-white text-lg">Joining meeting...</p>
-            <p className="text-gray-400 text-sm mt-2">Room: {roomName}</p>
-            <p className="text-gray-500 text-xs mt-2">Check browser console for details</p>
+            <div className={cssClasses.loadingSpinner}></div>
+            <p className={cssClasses.loadingText}>Joining meeting...</p>
+            <p className={cssClasses.loadingSubtext}>Room: {roomName}</p>
+            <p className={cssClasses.loadingHint}>Check browser console for details</p>
+            <div className={cssClasses.buttonGroup}>
             <Button 
               onClick={() => window.location.reload()} 
               variant="outline" 
               size="sm" 
-              className="mt-4"
+                className={cssClasses.button}
             >
               Retry
             </Button>
+              <Button 
+                onClick={() => setIsLoading(false)} 
+                variant="primary" 
+                size="sm" 
+                className={cssClasses.button}
+              >
+                Show Video
+              </Button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Jitsi container */}
+      {/* Video container */}
       <div 
         key="jitsi-container"
         ref={containerRefCallback} 
-        className="w-full h-full min-h-[420px] sm:min-h-[520px] md:min-h-[600px]"
-        style={{ minHeight: "420px" }}
+        className={cssClasses.videoContainer}
+        style={jitsiStyles.videoContainer}
       />
     </div>
   );
 }
-
-// Explicit named export to ensure module recognition during type checks
 
 export type { JitsiMeetProps };
