@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Button from "@/components/ui/Button";
 
-// Jitsi types (since we don't have @types/jitsi-meet)
+
 interface JitsiEventData {
   [key: string]: unknown;
   error?: string;

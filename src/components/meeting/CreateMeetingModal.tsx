@@ -75,11 +75,11 @@ export default function CreateMeetingModal({
         throw new Error(result.error || "Failed to create meeting");
       }
 
-      // Success - notify parent and close modal
+      
       onMeetingCreated(result.meeting);
       onClose();
       
-      // Reset form
+ 
       setFormData({
         title: "",
         description: "",
