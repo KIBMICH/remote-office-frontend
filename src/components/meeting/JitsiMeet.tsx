@@ -104,6 +104,7 @@ export default function JitsiMeet({
   const [isVoiceOnly, setIsVoiceOnly] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [permissionError, setPermissionError] = useState(false);
+  const initRetryRef = useRef(0);
 
   const handleMeetingEnd = useCallback(async () => {
     try {
@@ -131,11 +132,23 @@ export default function JitsiMeet({
 
   const initializeJitsi = useCallback(async () => {
     if (!jitsiContainerRef.current || !roomName || !userName) {
-      console.log("Missing requirements:", { 
-        container: !!jitsiContainerRef.current, 
-        roomName, 
-        userName 
+      console.log("Missing requirements:", {
+        container: !!jitsiContainerRef.current,
+        roomName,
+        userName
       });
+
+      // Retry a few times in case the ref hasn't attached yet or props aren't ready
+      if (initRetryRef.current < 20) {
+        initRetryRef.current += 1;
+        setTimeout(() => {
+          initializeJitsi();
+        }, 250);
+      } else {
+        console.warn("Jitsi init retry limit reached");
+        setHasError(true);
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -323,7 +336,10 @@ export default function JitsiMeet({
         document.head.removeChild(script);
       };
     } else {
-      initializeJitsi();
+      // Defer to next tick to ensure the container ref is attached
+      setTimeout(() => {
+        initializeJitsi();
+      }, 0);
     }
 
     // Cleanup on unmount
@@ -444,3 +460,7 @@ export default function JitsiMeet({
     </div>
   );
 }
+
+// Explicit named export to ensure module recognition during type checks
+
+export type { JitsiMeetProps };

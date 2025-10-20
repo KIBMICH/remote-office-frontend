@@ -1,11 +1,13 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 
 export default function DashboardGroupLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [overlayVisible, setOverlayVisible] = useState(false);
+  const pathname = usePathname();
 
   const openMenu = () => {
     setOverlayVisible(true);
@@ -23,6 +25,14 @@ export default function DashboardGroupLayout({ children }: { children: React.Rea
     if (overlayVisible) window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [overlayVisible]);
+
+  // Close mobile menu automatically on route change
+  useEffect(() => {
+    if (overlayVisible) {
+      closeMenu();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   return (
     <div className="min-h-screen bg-black text-gray-100">
