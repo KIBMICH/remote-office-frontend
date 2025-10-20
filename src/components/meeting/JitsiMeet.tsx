@@ -148,13 +148,21 @@ export default function JitsiMeet({
   }, [roomName, onMeetingEnd]);
 
   const initializeJitsi = useCallback(async () => {
+    // Wait for DOM to be ready and container to be attached
+    if (!document.readyState || document.readyState !== 'complete') {
+      console.log("⏳ Waiting for DOM to be ready...");
+      setTimeout(() => initializeJitsi(), 100);
+      return;
+    }
+
     // Debug ref attachment
     console.log("🔍 Checking requirements:", {
       container: !!jitsiContainerRef.current,
       containerElement: jitsiContainerRef.current,
       containerInDOM: jitsiContainerRef.current?.isConnected,
       roomName,
-      userName
+      userName,
+      containerReady
     });
 
     if (!jitsiContainerRef.current || !roomName || !userName) {
@@ -300,7 +308,7 @@ export default function JitsiMeet({
       setIsLoading(false);
       onError?.(error as Error);
     }
-  }, [roomName, userName, isVoiceOnly, handleMeetingEnd, onError]);
+  }, [roomName, userName, isVoiceOnly, handleMeetingEnd, onError, containerReady]);
 
   const toggleVoiceOnly = useCallback(() => {
     setIsVoiceOnly(prev => !prev);
@@ -373,10 +381,10 @@ export default function JitsiMeet({
       script.async = true;
       script.onload = () => {
         console.log("📡 Jitsi API script loaded");
-        // Wait for container to be ready before initializing
-        if (containerReady) {
+        // Wait a bit more for DOM to be fully ready
+        setTimeout(() => {
           initializeJitsi();
-        }
+        }, 500);
       };
       script.onerror = () => {
         console.error("❌ Failed to load Jitsi API script");
@@ -388,15 +396,15 @@ export default function JitsiMeet({
 
       return () => {
         clearTimeout(timeoutId);
-        document.head.removeChild(script);
+        if (document.head.contains(script)) {
+          document.head.removeChild(script);
+        }
       };
     } else {
-      // Defer to next tick to ensure the container ref is attached
+      // API already loaded, wait for DOM and container to be ready
       setTimeout(() => {
-        if (containerReady) {
-          initializeJitsi();
-        }
-      }, 0);
+        initializeJitsi();
+      }, 500);
     }
 
     // Cleanup on unmount
@@ -407,18 +415,8 @@ export default function JitsiMeet({
         jitsiApiRef.current = null;
       }
     };
-  }, [initializeJitsi, onError, isLoading, containerReady]);
+  }, [initializeJitsi, onError, isLoading]);
 
-  // Separate effect to trigger initialization when container becomes ready
-  useEffect(() => {
-    if (containerReady && window.JitsiMeetExternalAPI && !jitsiApiRef.current) {
-      console.log("🚀 Container ready, initializing Jitsi...");
-      // Add a small delay to ensure DOM is stable
-      setTimeout(() => {
-        initializeJitsi();
-      }, 100);
-    }
-  }, [containerReady, initializeJitsi]);
 
   if (hasError) {
     return (
