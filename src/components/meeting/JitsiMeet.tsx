@@ -106,13 +106,15 @@ export default function JitsiMeet({
   const [permissionError, setPermissionError] = useState(false);
   const [containerReady, setContainerReady] = useState(false);
   const initRetryRef = useRef(0);
+  const containerElementRef = useRef<HTMLDivElement | null>(null);
 
   // Ref callback to ensure container is ready
   const containerRefCallback = useCallback((node: HTMLDivElement | null) => {
     if (node) {
       jitsiContainerRef.current = node;
+      containerElementRef.current = node;
       setContainerReady(true);
-      console.log("✅ Container ref attached:", node);
+      console.log("✅ Container ref attached:", node, "In DOM:", node.isConnected);
     } else {
       setContainerReady(false);
       console.log("❌ Container ref detached");
@@ -177,6 +179,22 @@ export default function JitsiMeet({
       return;
     }
 
+    // Check if container is still in DOM
+    if (!jitsiContainerRef.current.isConnected) {
+      console.warn("Container not in DOM, waiting for reattachment...");
+      if (initRetryRef.current < 20) {
+        initRetryRef.current += 1;
+        setTimeout(() => {
+          initializeJitsi();
+        }, 250);
+      } else {
+        console.warn("Container never attached to DOM");
+        setHasError(true);
+        setIsLoading(false);
+      }
+      return;
+    }
+
     // Reset retry counter on successful initialization
     initRetryRef.current = 0;
 
@@ -196,11 +214,17 @@ export default function JitsiMeet({
 
       const domain = "meet.jit.si"; // You can change this to your own Jitsi instance
       
+      // Use the stable container element
+      const containerElement = containerElementRef.current || jitsiContainerRef.current;
+      if (!containerElement) {
+        throw new Error("Container element not available");
+      }
+
       const options: JitsiMeetConfig = {
         roomName: roomName,
         width: "100%",
         height: "100%",
-        parentNode: jitsiContainerRef.current,
+        parentNode: containerElement,
         userInfo: {
           displayName: userName,
         },
@@ -389,7 +413,10 @@ export default function JitsiMeet({
   useEffect(() => {
     if (containerReady && window.JitsiMeetExternalAPI && !jitsiApiRef.current) {
       console.log("🚀 Container ready, initializing Jitsi...");
-      initializeJitsi();
+      // Add a small delay to ensure DOM is stable
+      setTimeout(() => {
+        initializeJitsi();
+      }, 100);
     }
   }, [containerReady, initializeJitsi]);
 
@@ -494,6 +521,7 @@ export default function JitsiMeet({
 
       {/* Jitsi container */}
       <div 
+        key="jitsi-container"
         ref={containerRefCallback} 
         className="w-full h-full min-h-[420px] sm:min-h-[520px] md:min-h-[600px]"
         style={{ minHeight: "420px" }}
