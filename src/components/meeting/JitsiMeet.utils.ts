@@ -77,8 +77,27 @@ export const setupVideoSizing = (containerElement: HTMLElement): void => {
   );
 };
 
-// Dynamic branding removal utility
+// Dynamic branding removal utility with CSS overlay approach
 export const removeJitsiBranding = (containerElement: HTMLElement): void => {
+  // Create single black overlay at top-left and rely on CSS ::before for logo
+  const createWatermarkOverlay = () => {
+    const overlay = document.createElement('div');
+    overlay.id = 'jitsi-watermark-overlay';
+    overlay.style.cssText = `
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 220px !important;
+      height: 70px !important;
+      z-index: 1001 !important;
+      background: #000000 !important;
+      opacity: 0.9 !important;
+      border-radius: 0 0 15px 0 !important;
+      pointer-events: none !important;
+    `;
+    containerElement.appendChild(overlay);
+  };
+
   const hideJitsiElements = () => {
     const iframe = containerElement.querySelector('iframe[src*="meet.jit.si"]');
     if (!iframe) return;
@@ -88,65 +107,254 @@ export const removeJitsiBranding = (containerElement: HTMLElement): void => {
       const iframeDoc = iframeElement.contentDocument || iframeElement.contentWindow?.document;
       if (!iframeDoc) return;
 
-      // Hide any elements containing Jitsi branding
-      const jitsiSelectors = [
-        '[class*="jitsi"]',
-        '[id*="jitsi"]',
-        '[class*="logo"]',
-        '[id*="logo"]',
-        '[class*="brand"]',
-        '[id*="brand"]',
-        '[class*="watermark"]',
-        '[id*="watermark"]',
-        '[class*="branding"]',
-        '[id*="branding"]',
-        '[data-testid*="jitsi"]',
-        '[data-testid*="logo"]',
-        '[aria-label*="jitsi"]',
-        '[aria-label*="Jitsi"]',
-        '[title*="jitsi"]',
-        '[title*="Jitsi"]',
-        'img[src*="jitsi"]',
-        'img[alt*="jitsi"]',
-        'svg[class*="jitsi"]',
-        'div[class*="jitsi"]',
-        'span[class*="jitsi"]',
-        'h1[class*="jitsi"]',
-        'h2[class*="jitsi"]',
-        'h3[class*="jitsi"]',
-        'p[class*="jitsi"]',
-        'a[class*="jitsi"]'
-      ];
+      // Inject a script to hide branding from within the iframe
+      const script = iframeDoc.createElement('script');
+      script.textContent = `
+        (function() {
+          function hideJitsiBranding() {
+            // Hide any elements containing Jitsi or 8x8 branding
+            const jitsiSelectors = [
+              '[class*="jitsi"]',
+              '[id*="jitsi"]',
+              '[class*="8x8"]',
+              '[id*="8x8"]',
+              '[class*="eight"]',
+              '[id*="eight"]',
+              '[class*="logo"]',
+              '[id*="logo"]',
+              '[class*="brand"]',
+              '[id*="brand"]',
+              '[class*="watermark"]',
+              '[id*="watermark"]',
+              '[class*="branding"]',
+              '[id*="branding"]',
+              '[data-testid*="jitsi"]',
+              '[data-testid*="8x8"]',
+              '[data-testid*="logo"]',
+              '[aria-label*="jitsi"]',
+              '[aria-label*="Jitsi"]',
+              '[aria-label*="8x8"]',
+              '[title*="jitsi"]',
+              '[title*="Jitsi"]',
+              '[title*="8x8"]',
+              'img[src*="jitsi"]',
+              'img[alt*="jitsi"]',
+              'img[src*="8x8"]',
+              'img[alt*="8x8"]',
+              'svg[class*="jitsi"]',
+              'svg[class*="8x8"]',
+              'div[class*="jitsi"]',
+              'div[class*="8x8"]',
+              'span[class*="jitsi"]',
+              'span[class*="8x8"]',
+              'h1[class*="jitsi"]',
+              'h1[class*="8x8"]',
+              'h2[class*="jitsi"]',
+              'h2[class*="8x8"]',
+              'h3[class*="jitsi"]',
+              'h3[class*="8x8"]',
+              'p[class*="jitsi"]',
+              'p[class*="8x8"]',
+              'a[class*="jitsi"]',
+              'a[class*="8x8"]'
+            ];
 
-      jitsiSelectors.forEach(selector => {
-        const elements = iframeDoc.querySelectorAll(selector);
-        elements.forEach((element: Element) => {
-          const htmlElement = element as HTMLElement;
-          if (htmlElement.textContent?.toLowerCase().includes('jitsi') || 
-              htmlElement.className?.toLowerCase().includes('jitsi') ||
-              htmlElement.id?.toLowerCase().includes('jitsi')) {
-            htmlElement.style.display = 'none';
-            htmlElement.style.visibility = 'hidden';
-            htmlElement.style.opacity = '0';
-            htmlElement.style.height = '0';
-            htmlElement.style.width = '0';
-            htmlElement.style.position = 'absolute';
-            htmlElement.style.left = '-9999px';
-            htmlElement.style.top = '-9999px';
+            jitsiSelectors.forEach(selector => {
+              const elements = document.querySelectorAll(selector);
+              elements.forEach(element => {
+                if (element.textContent?.toLowerCase().includes('jitsi') || 
+                    element.textContent?.toLowerCase().includes('8x8') ||
+                    element.className?.toLowerCase().includes('jitsi') ||
+                    element.className?.toLowerCase().includes('8x8') ||
+                    element.id?.toLowerCase().includes('jitsi') ||
+                    element.id?.toLowerCase().includes('8x8')) {
+                  element.style.display = 'none';
+                  element.style.visibility = 'hidden';
+                  element.style.opacity = '0';
+                  element.style.height = '0';
+                  element.style.width = '0';
+                  element.style.position = 'absolute';
+                  element.style.left = '-9999px';
+                  element.style.top = '-9999px';
+                }
+              });
+            });
+            
+            // Specifically target watermark background images
+            const watermarkElements = document.querySelectorAll('*');
+            watermarkElements.forEach(element => {
+              const style = element.style;
+              const computedStyle = window.getComputedStyle(element);
+              
+              // Check for watermark background images
+              if (style.backgroundImage?.includes('watermark.svg') ||
+                  computedStyle.backgroundImage?.includes('watermark.svg') ||
+                  style.backgroundImage?.includes('images/watermark.svg') ||
+                  computedStyle.backgroundImage?.includes('images/watermark.svg')) {
+                element.style.backgroundImage = 'none';
+                element.style.background = 'none';
+                element.style.display = 'none';
+                element.style.visibility = 'hidden';
+                element.style.opacity = '0';
+                element.style.height = '0';
+                element.style.width = '0';
+                element.style.position = 'absolute';
+                element.style.left = '-9999px';
+                element.style.top = '-9999px';
+              }
+            });
+            
+            // Target specific branding elements while preserving functionality
+            const brandingSelectors = [
+              '[class*="jitsi-logo"]',
+              '[class*="jitsi-brand"]',
+              '[class*="jitsi-branding"]',
+              '[class*="8x8-logo"]',
+              '[class*="8x8-brand"]',
+              '[class*="watermark"]',
+              '[class*="logo"]:not([class*="button"]):not([class*="control"]):not([class*="toolbar"])',
+              '[id*="jitsi-logo"]',
+              '[id*="jitsi-brand"]',
+              '[id*="8x8-logo"]',
+              '[id*="8x8-brand"]',
+              '[id*="watermark"]',
+              '[id*="logo"]:not([id*="button"]):not([id*="control"])'
+            ];
+            
+            brandingSelectors.forEach(selector => {
+              try {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(element => {
+                  // Only hide if it's clearly a branding element, not a functional element
+                  const text = element.textContent?.toLowerCase() || '';
+                  const className = element.className?.toLowerCase() || '';
+                  const id = element.id?.toLowerCase() || '';
+                  
+                  if (text.includes('jitsi') || text.includes('8x8') || 
+                      className.includes('logo') || className.includes('brand') || className.includes('watermark') ||
+                      id.includes('logo') || id.includes('brand') || id.includes('watermark')) {
+                    element.style.display = 'none';
+                    element.style.visibility = 'hidden';
+                    element.style.opacity = '0';
+                    element.style.height = '0';
+                    element.style.width = '0';
+                    element.style.position = 'absolute';
+                    element.style.left = '-9999px';
+                    element.style.top = '-9999px';
+                  }
+                });
+              } catch (e) {
+                // Ignore selector errors
+              }
+            });
           }
-        });
-      });
+          
+          // Run immediately and on DOM changes
+          hideJitsiBranding();
+          setInterval(hideJitsiBranding, 100);
+          
+          const observer = new MutationObserver(hideJitsiBranding);
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'id']
+          });
+        })();
+      `;
+      
+      if (iframeDoc.head) {
+        iframeDoc.head.appendChild(script);
+      }
     } catch (error) {
       // Cross-origin restrictions might prevent access
       console.log('Cannot access iframe content for branding removal:', error);
     }
   };
 
-  // Run immediately and then periodically
+  // Create single watermark overlay immediately
+  createWatermarkOverlay();
+
+  // Run immediately and then more frequently
   hideJitsiElements();
-  [500, 1000, 2000, 3000, 5000].forEach(delay => 
+  [100, 300, 500, 1000, 1500, 2000, 3000, 4000, 5000, 7000, 10000].forEach(delay => 
     setTimeout(hideJitsiElements, delay)
   );
+  
+  // Also run on any DOM changes
+  const observer = new MutationObserver(() => {
+    setTimeout(hideJitsiElements, 100);
+  });
+  
+  try {
+    const iframeElement = containerElement.querySelector('iframe[src*="meet.jit.si"]') as HTMLIFrameElement;
+    if (iframeElement && iframeElement.contentDocument) {
+      observer.observe(iframeElement.contentDocument.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'id']
+      });
+    }
+  } catch (error) {
+    // Cross-origin restrictions
+    console.log('Cannot observe iframe mutations:', error);
+  }
+};
+
+// Cleanup function to remove all watermark overlays
+export const cleanupWatermarkOverlays = (containerElement: HTMLElement): void => {
+  // Remove all overlays with watermark-related IDs
+  const overlays = containerElement.querySelectorAll('[id*="jitsi-watermark-overlay"], [id*="watermark-overlay"], [data-watermark-overlay="true"]');
+  overlays.forEach(overlay => overlay.remove());
+};
+
+// Mobile responsive watermark overlay
+export const createAdvancedWatermarkOverlay = (containerElement: HTMLElement): void => {
+  // Remove existing overlays first
+  cleanupWatermarkOverlays(containerElement);
+  
+  // Create responsive overlay at top-left
+  const overlay = document.createElement('div');
+  overlay.id = 'jitsi-watermark-overlay';
+  
+  // Get responsive dimensions based on screen size
+  const getResponsiveDimensions = () => {
+    const width = window.innerWidth;
+    if (width < 640) {
+      return { width: '120px', height: '40px', borderRadius: '0 0 8px 0' };
+    } else if (width < 1024) {
+      return { width: '180px', height: '55px', borderRadius: '0 0 12px 0' };
+    } else {
+      return { width: '220px', height: '70px', borderRadius: '0 0 15px 0' };
+    }
+  };
+  
+  const dimensions = getResponsiveDimensions();
+  
+  overlay.style.cssText = `
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: ${dimensions.width} !important;
+    height: ${dimensions.height} !important;
+    z-index: 1001 !important;
+    background: #141414 !important;
+    opacity: 1 !important;
+    border-radius: ${dimensions.borderRadius} !important;
+    pointer-events: none !important;
+  `;
+  
+  // Update dimensions on window resize
+  const updateDimensions = () => {
+    const newDimensions = getResponsiveDimensions();
+    overlay.style.width = newDimensions.width;
+    overlay.style.height = newDimensions.height;
+    overlay.style.borderRadius = newDimensions.borderRadius;
+  };
+  
+  window.addEventListener('resize', updateDimensions);
+  containerElement.appendChild(overlay);
 };
 
 export const initializeVideoStyles = (): void => {

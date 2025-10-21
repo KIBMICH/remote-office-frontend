@@ -21,6 +21,8 @@ import {
   createJitsiConfig,
   setupVideoSizing,
   removeJitsiBranding,
+  createAdvancedWatermarkOverlay,
+  cleanupWatermarkOverlays,
   initializeVideoStyles,
   handleMeetingEnd,
   requestMediaPermissions,
@@ -264,7 +266,8 @@ export default function JitsiMeet({
 
       const containerElement = jitsiContainerRef.current;
       const config = createJitsiConfig(roomName, userName, isVoiceOnly, containerElement);
-      const domain = JITSI_CONFIG.DOMAINS[0];
+      // Force use of Jitsi domain, not 8x8
+      const domain = "meet.jit.si";
 
       logApiCreation(config);
       const api = new window.JitsiMeetExternalAPI(domain, config);
@@ -274,8 +277,9 @@ export default function JitsiMeet({
       // Apply video sizing fixes
       setupVideoSizing(containerElement);
 
-      // Remove Jitsi branding
+      // Remove Jitsi branding with advanced overlay system
       removeJitsiBranding(containerElement);
+      createAdvancedWatermarkOverlay(containerElement);
 
       // Inject global styles
       initializeVideoStyles();
@@ -389,6 +393,10 @@ export default function JitsiMeet({
       if (jitsiApiRef.current) {
         jitsiApiRef.current.dispose();
         jitsiApiRef.current = null;
+      }
+      // Cleanup watermark overlays
+      if (jitsiContainerRef.current) {
+        cleanupWatermarkOverlays(jitsiContainerRef.current);
       }
     };
   }, [initializeJitsi, onError, isLoading, clearLoadingTimeout]);

@@ -61,21 +61,21 @@ export const jitsiStyles = {
 // CSS classes for dynamic styling
 export const cssClasses = {
   container: 'relative bg-gray-900 rounded-xl border border-gray-800 overflow-hidden',
-  header: 'absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/80 to-transparent p-4 backdrop-blur-sm meeting-header',
-  videoContainer: 'w-full h-full min-h-[420px] sm:min-h-[520px] md:min-h-[600px] jitsi-container',
-  loadingSpinner: 'animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4',
-  loadingText: 'text-white text-lg',
-  loadingSubtext: 'text-gray-400 text-sm mt-2',
+  header: 'absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/80 to-transparent p-2 sm:p-4 backdrop-blur-sm meeting-header',
+  videoContainer: 'w-full h-full min-h-[300px] sm:min-h-[420px] md:min-h-[520px] lg:min-h-[600px] jitsi-container',
+  loadingSpinner: 'animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-purple-600 mx-auto mb-4',
+  loadingText: 'text-white text-base sm:text-lg',
+  loadingSubtext: 'text-gray-400 text-xs sm:text-sm mt-2',
   loadingHint: 'text-gray-500 text-xs mt-2',
   buttonGroup: 'space-y-2',
   button: 'w-full',
-  headerContent: 'flex items-center justify-between',
-  headerInfo: 'flex items-center gap-3',
-  roomBadge: 'bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium',
-  userName: 'text-white text-sm font-medium',
-  headerControls: 'flex items-center gap-2',
-  videoButton: 'text-white border-white/20 hover:bg-white/10',
-  leaveButton: 'text-red-400 border-red-400/50 hover:bg-red-400/10',
+  headerContent: 'flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0',
+  headerInfo: 'flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-3 w-full sm:w-auto',
+  roomBadge: 'bg-purple-600 text-white px-2 py-1 sm:px-3 rounded-full text-xs sm:text-sm font-medium',
+  userName: 'text-white text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-none',
+  headerControls: 'flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-end',
+  videoButton: 'text-white border-white/20 hover:bg-white/10 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2',
+  leaveButton: 'text-red-400 border-red-400/50 hover:bg-red-400/10 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2',
   errorIcon: 'text-yellow-400 text-2xl mb-4',
   errorTitle: 'text-lg font-semibold text-white mb-2',
   errorMessage: 'text-gray-400 mb-4',
@@ -109,6 +109,50 @@ export const injectGlobalStyles = (): void => {
       text-shadow: none !important;
       box-shadow: none !important;
     }
+    
+    /* Mobile-specific header adjustments */
+    @media (max-width: 639px) {
+      .meeting-header {
+        padding: 0.5rem !important;
+        min-height: 60px !important;
+      }
+      
+      .meeting-header .header-content {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+      }
+      
+      .meeting-header .header-info {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.25rem !important;
+        width: 100% !important;
+      }
+      
+      .meeting-header .header-controls {
+        width: 100% !important;
+        justify-content: space-between !important;
+        gap: 0.5rem !important;
+      }
+      
+      .meeting-header .room-badge {
+        font-size: 0.75rem !important;
+        padding: 0.25rem 0.5rem !important;
+      }
+      
+      .meeting-header .user-name {
+        font-size: 0.75rem !important;
+        max-width: 100% !important;
+      }
+      
+      .meeting-header .video-button,
+      .meeting-header .leave-button {
+        font-size: 0.75rem !important;
+        padding: 0.25rem 0.5rem !important;
+        min-width: 60px !important;
+      }
+    }
     .jitsi-container {
       position: relative !important;
       top: 0 !important;
@@ -117,10 +161,13 @@ export const injectGlobalStyles = (): void => {
       height: 100% !important;
     }
     
-    /* Hide all Jitsi branding and logos - including pre-join screen */
+    /* Hide all Jitsi and 8x8 branding and logos - including pre-join screen */
     iframe[src*="meet.jit.si"] *,
     iframe[src*="meet.jit.si"] body *,
-    iframe[src*="meet.jit.si"] div * {
+    iframe[src*="meet.jit.si"] div *,
+    iframe[src*="8x8.vc"] *,
+    iframe[src*="8x8.vc"] body *,
+    iframe[src*="8x8.vc"] div * {
       /* Hide Jitsi logo in video area */
       [class*="jitsi-logo"],
       [class*="jitsi-watermark"],
@@ -164,7 +211,17 @@ export const injectGlobalStyles = (): void => {
       [id*="leftwatermark"],
       [id*="rightwatermark"],
       [id*="topwatermark"],
-      [id*="bottomwatermark"] {
+      [id*="bottomwatermark"],
+      /* 8x8 specific branding */
+      [class*="8x8"],
+      [id*="8x8"],
+      [class*="eight"],
+      [id*="eight"],
+      [data-testid*="8x8"],
+      [aria-label*="8x8"],
+      [title*="8x8"],
+      img[src*="8x8"],
+      img[alt*="8x8"] {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
@@ -291,35 +348,218 @@ export const injectGlobalStyles = (): void => {
       }
     }
     
-    /* Add Remotify branding to replace Jitsi logo */
-    iframe[src*="meet.jit.si"] body::before {
-      content: "🏢 Remotify" !important;
+    /* Ultra-aggressive pre-join screen logo hiding */
+    iframe[src*="meet.jit.si"] body div[class*="prejoin"] *,
+    iframe[src*="meet.jit.si"] body div[class*="left-panel"] *,
+    iframe[src*="meet.jit.si"] body div[class*="welcome"] *,
+    iframe[src*="meet.jit.si"] body div[class*="meeting"] *,
+    iframe[src*="meet.jit.si"] body div[class*="header"] *,
+    iframe[src*="meet.jit.si"] body div[class*="logo"] *,
+    iframe[src*="meet.jit.si"] body div[class*="brand"] *,
+    iframe[src*="meet.jit.si"] body div[class*="branding"] *,
+    iframe[src*="meet.jit.si"] body div[class*="jitsi"] *,
+    iframe[src*="meet.jit.si"] body span[class*="logo"] *,
+    iframe[src*="meet.jit.si"] body span[class*="brand"] *,
+    iframe[src*="meet.jit.si"] body span[class*="jitsi"] *,
+    iframe[src*="meet.jit.si"] body h1[class*="logo"] *,
+    iframe[src*="meet.jit.si"] body h2[class*="logo"] *,
+    iframe[src*="meet.jit.si"] body h3[class*="logo"] *,
+    iframe[src*="meet.jit.si"] body p[class*="logo"] *,
+    iframe[src*="meet.jit.si"] body a[class*="logo"] *,
+    iframe[src*="meet.jit.si"] body img[class*="logo"] *,
+    iframe[src*="meet.jit.si"] body svg[class*="logo"] *,
+    iframe[src*="meet.jit.si"] body [class*="jitsi-logo"] *,
+    iframe[src*="meet.jit.si"] body [class*="jitsi-brand"] *,
+    iframe[src*="meet.jit.si"] body [class*="jitsi-branding"] *,
+    iframe[src*="meet.jit.si"] body [id*="jitsi-logo"] *,
+    iframe[src*="meet.jit.si"] body [id*="jitsi-brand"] *,
+    iframe[src*="meet.jit.si"] body [id*="jitsi-branding"] *,
+    iframe[src*="meet.jit.si"] body [data-testid*="jitsi-logo"] *,
+    iframe[src*="meet.jit.si"] body [data-testid*="logo"] *,
+    iframe[src*="meet.jit.si"] body [aria-label*="jitsi"] *,
+    iframe[src*="meet.jit.si"] body [aria-label*="Jitsi"] *,
+    iframe[src*="meet.jit.si"] body [title*="jitsi"] *,
+    iframe[src*="meet.jit.si"] body [title*="Jitsi"] * {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      height: 0 !important;
+      width: 0 !important;
+      overflow: hidden !important;
+      position: absolute !important;
+      left: -9999px !important;
+      top: -9999px !important;
+    }
+    
+    /* Specific targeting for watermark background image */
+    iframe[src*="meet.jit.si"] body *[style*="background-image: url(images/watermark.svg)"],
+    iframe[src*="meet.jit.si"] body *[style*="background-image:url(images/watermark.svg)"],
+    iframe[src*="meet.jit.si"] body *[style*="watermark.svg"],
+    iframe[src*="meet.jit.si"] body *[style*="background-image"],
+    iframe[src*="meet.jit.si"] body *[class*="watermark"],
+    iframe[src*="meet.jit.si"] body *[id*="watermark"],
+    iframe[src*="meet.jit.si"] body *[class*="logo"],
+    iframe[src*="meet.jit.si"] body *[id*="logo"] {
+      background-image: none !important;
+      background: none !important;
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      height: 0 !important;
+      width: 0 !important;
+      overflow: hidden !important;
+      position: absolute !important;
+      left: -9999px !important;
+      top: -9999px !important;
+    }
+    
+    /* Inject JavaScript to hide Jitsi branding dynamically */
+    iframe[src*="meet.jit.si"] body::after {
+      content: "" !important;
       position: fixed !important;
-      top: 20px !important;
-      left: 20px !important;
-      z-index: 9999 !important;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-      color: white !important;
-      padding: 12px 20px !important;
-      border-radius: 12px !important;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-      font-weight: 700 !important;
-      font-size: 16px !important;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
-      letter-spacing: 0.8px !important;
-      border: 2px solid rgba(255, 255, 255, 0.2) !important;
-      backdrop-filter: blur(10px) !important;
-      transition: all 0.3s ease !important;
-      cursor: default !important;
-      user-select: none !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 10000 !important;
+      pointer-events: none !important;
+      background: transparent !important;
+    }
+    
+    /* Targeted branding removal - keep pre-join functionality */
+    iframe[src*="meet.jit.si"] body div[class*="leftwatermark"],
+    iframe[src*="meet.jit.si"] body div[class*="rightwatermark"],
+    iframe[src*="meet.jit.si"] body div[class*="topwatermark"],
+    iframe[src*="meet.jit.si"] body div[class*="bottomwatermark"],
+    iframe[src*="meet.jit.si"] body div[class*="jitsi-logo"],
+    iframe[src*="meet.jit.si"] body div[class*="jitsi-brand"],
+    iframe[src*="meet.jit.si"] body div[class*="jitsi-branding"],
+    iframe[src*="meet.jit.si"] body div[class*="logo"],
+    iframe[src*="meet.jit.si"] body div[class*="brand"],
+    iframe[src*="meet.jit.si"] body div[class*="watermark"],
+    iframe[src*="meet.jit.si"] body span[class*="jitsi-logo"],
+    iframe[src*="meet.jit.si"] body span[class*="logo"],
+    iframe[src*="meet.jit.si"] body h1[class*="jitsi"],
+    iframe[src*="meet.jit.si"] body h2[class*="jitsi"],
+    iframe[src*="meet.jit.si"] body h3[class*="jitsi"],
+    iframe[src*="meet.jit.si"] body p[class*="jitsi"],
+    iframe[src*="meet.jit.si"] body a[class*="jitsi"],
+    iframe[src*="meet.jit.si"] body img[class*="jitsi"],
+    iframe[src*="meet.jit.si"] body svg[class*="jitsi"],
+    iframe[src*="8x8.vc"] body div[class*="leftwatermark"],
+    iframe[src*="8x8.vc"] body div[class*="rightwatermark"],
+    iframe[src*="8x8.vc"] body div[class*="topwatermark"],
+    iframe[src*="8x8.vc"] body div[class*="bottomwatermark"],
+    iframe[src*="8x8.vc"] body div[class*="8x8-logo"],
+    iframe[src*="8x8.vc"] body div[class*="8x8-brand"],
+    iframe[src*="8x8.vc"] body div[class*="logo"],
+    iframe[src*="8x8.vc"] body div[class*="brand"],
+    iframe[src*="8x8.vc"] body div[class*="watermark"],
+    iframe[src*="8x8.vc"] body span[class*="8x8-logo"],
+    iframe[src*="8x8.vc"] body span[class*="logo"],
+    iframe[src*="8x8.vc"] body h1[class*="8x8"],
+    iframe[src*="8x8.vc"] body h2[class*="8x8"],
+    iframe[src*="8x8.vc"] body h3[class*="8x8"],
+    iframe[src*="8x8.vc"] body p[class*="8x8"],
+    iframe[src*="8x8.vc"] body a[class*="8x8"],
+    iframe[src*="8x8.vc"] body img[class*="8x8"],
+    iframe[src*="8x8.vc"] body svg[class*="8x8"] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      height: 0 !important;
+      width: 0 !important;
+      overflow: hidden !important;
+      position: absolute !important;
+      left: -9999px !important;
+      top: -9999px !important;
+    }
+    
+    /* Force video to take full width */
+    iframe[src*="meet.jit.si"] body div[class*="video"],
+    iframe[src*="meet.jit.si"] body div[class*="conference"],
+    iframe[src*="meet.jit.si"] body div[class*="meeting"] {
+      width: 100% !important;
+      left: 0 !important;
+      margin-left: 0 !important;
+    }
+    
+    /* Single overlay at top-left (where Jitsi watermark usually sits) - Mobile responsive */
+    .jitsi-container::after {
+      content: "" !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 120px !important;
+      height: 40px !important;
+      z-index: 1001 !important;
+      background: #141414 !important;
+      opacity: 1 !important;
+      border-radius: 0 0 8px 0 !important;
       pointer-events: none !important;
     }
     
-    /* Add subtle animation to the branding */
-    iframe[src*="meet.jit.si"] body::before:hover {
-      transform: scale(1.05) !important;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4) !important;
+    /* Tablet and larger screens */
+    @media (min-width: 640px) {
+      .jitsi-container::after {
+        width: 180px !important;
+        height: 55px !important;
+        border-radius: 0 0 12px 0 !important;
+      }
     }
+    
+    /* Desktop screens */
+    @media (min-width: 1024px) {
+      .jitsi-container::after {
+        width: 220px !important;
+        height: 70px !important;
+        border-radius: 0 0 15px 0 !important;
+      }
+    }
+    
+    /* Logo overlay - Mobile responsive */
+    .jitsi-container::before {
+      /* Replace text with logo image */
+      content: "" !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 120px !important;
+      height: 40px !important;
+      z-index: 1001 !important;
+      background: url('/remote_logo.png') no-repeat center center / 80px auto !important;
+      border-radius: 0 0 8px 0 !important;
+      box-shadow: none !important;
+      pointer-events: none !important;
+      opacity: 1 !important;
+      backdrop-filter: none !important;
+      border: 0 !important;
+      user-select: none !important;
+    }
+    
+    /* Tablet and larger screens - Logo */
+    @media (min-width: 640px) {
+      .jitsi-container::before {
+        width: 180px !important;
+        height: 55px !important;
+        background-size: 100px auto !important;
+        border-radius: 0 0 12px 0 !important;
+      }
+    }
+    
+    /* Desktop screens - Logo */
+    @media (min-width: 1024px) {
+      .jitsi-container::before {
+        width: 220px !important;
+        height: 70px !important;
+        background-size: 120px auto !important;
+        border-radius: 0 0 15px 0 !important;
+      }
+    }
+    
+    /* Remove additional iframe-side branding badge */
+    iframe[src*="meet.jit.si"] body::before,
+    iframe[src*="8x8.vc"] body::before { content: none !important; }
     
     /* Hide the original Jitsi logo area completely */
     iframe[src*="meet.jit.si"] body [class*="leftwatermark"],
