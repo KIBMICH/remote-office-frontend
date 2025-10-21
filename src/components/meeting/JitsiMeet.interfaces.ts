@@ -51,6 +51,7 @@ export interface JitsiMeetConfig {
     };
     disableRtx?: boolean;
     enableLipSync?: boolean;
+    prejoinPageEnabled?: boolean;
   };
   interfaceConfigOverwrite?: {
     SHOW_JITSI_WATERMARK?: boolean;
@@ -102,7 +103,7 @@ export interface JitsiMeetState {
 
 // Configuration constants
 export const JITSI_CONFIG = {
-  DOMAINS: ["meet.jit.si", "meet.jit.si:443", "8x8.vc"],
+  DOMAINS: ["meet.jit.si", "meet.jit.si:443", "jitsi.riot.im"],
   STUN_SERVERS: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
