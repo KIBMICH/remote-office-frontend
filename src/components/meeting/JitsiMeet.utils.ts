@@ -39,6 +39,8 @@ export const createJitsiConfig = (
     startWithAudioMuted: false,
     startWithVideoMuted: false,
     startAudioOnly: isVoiceOnly,
+    disableDeepLinking: true,
+    prejoinPageEnabled: false,
     enableWelcomePage: false,
     enableClosePage: false,
     enableInsecureRoomNameWarning: false,
@@ -66,6 +68,7 @@ export const createJitsiConfig = (
     SHOW_JITSI_WATERMARK: false,
     SHOW_WATERMARK_FOR_GUESTS: false,
     SHOW_POWERED_BY: false,
+    MOBILE_APP_PROMO: false,
   },
 });
 

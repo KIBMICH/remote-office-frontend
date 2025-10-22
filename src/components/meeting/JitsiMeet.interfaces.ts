@@ -52,11 +52,13 @@ export interface JitsiMeetConfig {
     disableRtx?: boolean;
     enableLipSync?: boolean;
     prejoinPageEnabled?: boolean;
+    disableDeepLinking?: boolean;
   };
   interfaceConfigOverwrite?: {
     SHOW_JITSI_WATERMARK?: boolean;
     SHOW_WATERMARK_FOR_GUESTS?: boolean;
     SHOW_POWERED_BY?: boolean;
+    MOBILE_APP_PROMO?: boolean;
   };
 }
 
