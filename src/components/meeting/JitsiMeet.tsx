@@ -490,35 +490,35 @@ export default function JitsiMeet({
         </div>
       </div>
 
-      {/* Loading state */}
-      {isLoading && (
-        <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-20 px-4">
-          <div className="text-center">
-            <div className={cssClasses.loadingSpinner}></div>
-            <p className={cssClasses.loadingText}>Joining meeting...</p>
-            <p className={cssClasses.loadingSubtext}>Room: {roomName}</p>
-            <p className={cssClasses.loadingHint}>Check browser console for details</p>
-            <div className={cssClasses.buttonGroup}>
-            <Button 
-              onClick={() => window.location.reload()} 
-              variant="outline" 
-              size="sm" 
-                className={cssClasses.button}
-            >
-              Retry
-            </Button>
-              <Button 
-                onClick={() => setIsLoading(false)} 
-                variant="primary" 
-                size="sm" 
-                className={cssClasses.button}
-              >
-                Show Video
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+       {/* Loading state - hidden on mobile */}
+       {isLoading && (
+         <div className="absolute inset-0 bg-gray-900 items-center justify-center z-20 px-4 hidden sm:flex">
+           <div className="text-center">
+             <div className={cssClasses.loadingSpinner}></div>
+             <p className={cssClasses.loadingText}>Joining meeting...</p>
+             <p className={cssClasses.loadingSubtext}>Room: {roomName}</p>
+             <p className={cssClasses.loadingHint}>Check browser console for details</p>
+             <div className={cssClasses.buttonGroup}>
+             <Button 
+               onClick={() => window.location.reload()} 
+               variant="outline" 
+               size="sm" 
+                 className={cssClasses.button}
+             >
+               Retry
+             </Button>
+             <Button 
+               onClick={() => setIsLoading(false)} 
+               variant="primary" 
+               size="sm" 
+               className={cssClasses.button}
+             >
+               Show Video
+             </Button>
+             </div>
+           </div>
+         </div>
+       )}
 
       {/* Video container */}
       <div 
