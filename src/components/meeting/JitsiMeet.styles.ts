@@ -522,7 +522,7 @@ export const injectGlobalStyles = (): void => {
     /* Mobile overlay - smaller size */
     @media (max-width: 639px) {
       .jitsi-container::after {
-        width: 120px !important;
+        width: 305px !important;
         height: 60px !important;
         background: #111111 !important;
         display: block !important;
