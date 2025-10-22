@@ -1,17 +1,17 @@
 // JitsiMeet component styles
 export const jitsiStyles = {
-  // Container styles
+  // Container styles - responsive padding for mobile
   container: {
     position: 'relative' as const,
     height: '100%',
     minHeight: '500px',
-    paddingTop: '80px',
+    paddingTop: '50px', // Reduced padding for mobile
   },
   
-  // Video container styles
+  // Video container styles - responsive height calculation
   videoContainer: {
     minHeight: '420px',
-    height: 'calc(100% - 80px)',
+    height: 'calc(100% - 50px)', // Adjusted to match reduced padding
     width: '100%',
     position: 'relative' as const,
     overflow: 'hidden' as const,
@@ -26,9 +26,10 @@ export const jitsiStyles = {
     left: '0',
     right: '0',
     zIndex: 20,
-    background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent)',
-    padding: '1rem',
-    backdropFilter: 'blur(4px)',
+    background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent)',
+    padding: '1rem 1.5rem',
+    minHeight: '60px',
+    // Removed backdropFilter blur to prevent blurriness
   },
 
   // Loading overlay styles
@@ -61,7 +62,7 @@ export const jitsiStyles = {
 // CSS classes for dynamic styling
 export const cssClasses = {
   container: 'relative bg-gray-900 rounded-xl border border-gray-800 overflow-hidden',
-  header: 'absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/80 to-transparent p-2 sm:p-4 backdrop-blur-sm meeting-header',
+  header: 'absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/90 to-transparent p-2 sm:p-3 md:p-5 meeting-header',
   videoContainer: 'w-full h-full min-h-[300px] sm:min-h-[420px] md:min-h-[520px] lg:min-h-[600px] jitsi-container',
   loadingSpinner: 'animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-purple-600 mx-auto mb-4',
   loadingText: 'text-white text-base sm:text-lg',
@@ -69,13 +70,13 @@ export const cssClasses = {
   loadingHint: 'text-gray-500 text-xs mt-2',
   buttonGroup: 'space-y-2',
   button: 'w-full',
-  headerContent: 'flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0',
-  headerInfo: 'flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-3 w-full sm:w-auto',
-  roomBadge: 'bg-purple-600 text-white px-2 py-1 sm:px-3 rounded-full text-xs sm:text-sm font-medium',
-  userName: 'text-white text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-none',
-  headerControls: 'flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-end',
-  videoButton: 'text-white border-white/20 hover:bg-white/10 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2',
-  leaveButton: 'text-red-400 border-red-400/50 hover:bg-red-400/10 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2',
+  headerContent: 'flex flex-row items-center justify-between gap-2 sm:gap-3 md:gap-4',
+  headerInfo: 'flex flex-row items-center gap-1 sm:gap-2 md:gap-3',
+  roomBadge: 'bg-purple-600 text-white px-1 py-0.5 sm:px-2 sm:py-1 md:px-3 rounded-full text-xs sm:text-sm font-medium',
+  userName: 'text-white text-xs sm:text-sm font-medium truncate max-w-[80px] sm:max-w-[120px] md:max-w-none',
+  headerControls: 'flex items-center gap-2 sm:gap-3',
+  videoButton: 'text-white border-white/20 hover:bg-white/10 text-xs sm:text-sm px-1 py-0.5 sm:px-2 sm:py-1 md:px-3 md:py-2',
+  leaveButton: 'text-red-400 border-red-400/50 hover:bg-red-400/10 text-xs sm:text-sm px-1 py-0.5 sm:px-2 sm:py-1 md:px-3 md:py-2',
   errorIcon: 'text-yellow-400 text-2xl mb-4',
   errorTitle: 'text-lg font-semibold text-white mb-2',
   errorMessage: 'text-gray-400 mb-4',
@@ -99,58 +100,64 @@ export const injectGlobalStyles = (): void => {
       z-index: 1 !important;
       margin-top: 0 !important;
       padding-top: 0 !important;
+      /* Ensure video clarity */
+      image-rendering: auto !important;
+      -webkit-backface-visibility: hidden !important;
+      backface-visibility: hidden !important;
+      transform: translateZ(0) !important;
     }
     .meeting-header {
-      text-rendering: optimizeLegibility;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeSpeed;
+      -webkit-font-smoothing: auto;
+      -moz-osx-font-smoothing: auto;
+      font-smooth: never;
     }
     .meeting-header * {
       text-shadow: none !important;
       box-shadow: none !important;
     }
     
-    /* Mobile-specific header adjustments */
+    /* Mobile-specific header optimizations */
     @media (max-width: 639px) {
       .meeting-header {
-        padding: 0.5rem !important;
-        min-height: 60px !important;
+        padding: 0.5rem 1rem !important;
+        min-height: 50px !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
       }
       
       .meeting-header .header-content {
-        flex-direction: column !important;
-        align-items: flex-start !important;
         gap: 0.5rem !important;
       }
       
       .meeting-header .header-info {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.25rem !important;
-        width: 100% !important;
-      }
-      
-      .meeting-header .header-controls {
-        width: 100% !important;
-        justify-content: space-between !important;
         gap: 0.5rem !important;
       }
       
       .meeting-header .room-badge {
-        font-size: 0.75rem !important;
-        padding: 0.25rem 0.5rem !important;
+        font-size: 0.625rem !important;
+        padding: 0.125rem 0.375rem !important;
+        background: transparent !important;
+        /* Removed backdrop-filter blur */
       }
       
       .meeting-header .user-name {
-        font-size: 0.75rem !important;
-        max-width: 100% !important;
+        font-size: 0.625rem !important;
+        max-width: 60px !important;
+        background: transparent !important;
+        padding: 0.125rem 0.375rem !important;
+        border-radius: 0.25rem !important;
+        /* Removed backdrop-filter blur */
       }
       
       .meeting-header .video-button,
       .meeting-header .leave-button {
-        font-size: 0.75rem !important;
-        padding: 0.25rem 0.5rem !important;
-        min-width: 60px !important;
+        font-size: 0.625rem !important;
+        padding: 0.125rem 0.375rem !important;
+        min-width: 45px !important;
+        background: transparent !important;
+        /* Removed backdrop-filter blur */
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
       }
     }
     .jitsi-container {
@@ -475,60 +482,75 @@ export const injectGlobalStyles = (): void => {
       top: -9999px !important;
     }
     
-    /* Force video to take full width */
+    /* Force video to take full width and ensure clarity */
     iframe[src*="meet.jit.si"] body div[class*="video"],
     iframe[src*="meet.jit.si"] body div[class*="conference"],
     iframe[src*="meet.jit.si"] body div[class*="meeting"] {
       width: 100% !important;
       left: 0 !important;
       margin-left: 0 !important;
+      /* Ensure video clarity */
+      image-rendering: auto !important;
+      -webkit-backface-visibility: hidden !important;
+      backface-visibility: hidden !important;
+      transform: translateZ(0) !important;
     }
     
-    /* Single overlay at top-left (where Jitsi watermark usually sits) - Mobile responsive */
+    /* Ensure video elements are crisp */
+    iframe[src*="meet.jit.si"] body video,
+    iframe[src*="meet.jit.si"] body canvas {
+      image-rendering: auto !important;
+      -webkit-backface-visibility: hidden !important;
+      backface-visibility: hidden !important;
+      transform: translateZ(0) !important;
+    }
+    
+    /* Single overlay at top-left (where Jitsi watermark usually sits) - Desktop only */
     .jitsi-container::after {
       content: "" !important;
       position: absolute !important;
       top: 0 !important;
       left: 0 !important;
-      width: 120px !important;
-      height: 40px !important;
+      width: 200px !important;
+      height: 70px !important;
       z-index: 1001 !important;
-      background: #141414 !important;
-      opacity: 1 !important;
-      border-radius: 0 0 8px 0 !important;
+      background: #111111 !important;
+      border-radius: 0 0 12px 0 !important;
       pointer-events: none !important;
     }
     
-    /* Tablet and larger screens */
-    @media (min-width: 640px) {
+    /* Mobile overlay - smaller size */
+    @media (max-width: 639px) {
       .jitsi-container::after {
-        width: 180px !important;
-        height: 55px !important;
-        border-radius: 0 0 12px 0 !important;
+        width: 120px !important;
+        height: 60px !important;
+        background: #111111 !important;
+        display: block !important;
+        visibility: visible !important;
       }
     }
     
     /* Desktop screens */
     @media (min-width: 1024px) {
       .jitsi-container::after {
-        width: 220px !important;
-        height: 70px !important;
+        width: 240px !important;
+        height: 80px !important;
         border-radius: 0 0 15px 0 !important;
       }
     }
     
-    /* Logo overlay - Mobile responsive */
+    /* Logo overlay - Desktop only */
     .jitsi-container::before {
       /* Replace text with logo image */
       content: "" !important;
       position: absolute !important;
       top: 0 !important;
       left: 0 !important;
-      width: 120px !important;
-      height: 40px !important;
-      z-index: 1001 !important;
-      background: url('/remote_logo.png') no-repeat center center / 80px auto !important;
-      border-radius: 0 0 8px 0 !important;
+      width: 200px !important;
+      height: 70px !important;
+      z-index: 1002 !important;
+      background: url('/remote_logo.png') no-repeat left center / 60px auto !important;
+      border-radius: 0 0 12px 0 !important;
       box-shadow: none !important;
       pointer-events: none !important;
       opacity: 1 !important;
@@ -537,23 +559,72 @@ export const injectGlobalStyles = (): void => {
       user-select: none !important;
     }
     
-    /* Tablet and larger screens - Logo */
-    @media (min-width: 640px) {
+    /* Mobile logo overlay - smaller size */
+    @media (max-width: 639px) {
       .jitsi-container::before {
-        width: 180px !important;
-        height: 55px !important;
-        background-size: 100px auto !important;
-        border-radius: 0 0 12px 0 !important;
+        width: 120px !important;
+        height: 40px !important;
+        background: url('/remote_logo.png') no-repeat left center / 40px auto !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 1002 !important;
       }
     }
     
     /* Desktop screens - Logo */
     @media (min-width: 1024px) {
       .jitsi-container::before {
-        width: 220px !important;
-        height: 70px !important;
-        background-size: 120px auto !important;
+        width: 240px !important;
+        height: 80px !important;
+        background: url('/remote_logo.png') no-repeat left center / 70px auto !important;
         border-radius: 0 0 15px 0 !important;
+      }
+    }
+    
+    /* Mobile-specific overrides - ensure overlays work on mobile */
+    @media (max-width: 639px) {
+      .jitsi-container::after,
+      .jitsi-container::before {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        pointer-events: none !important;
+      }
+      
+      /* Show Jitsi logo on mobile by overriding the hiding rules */
+      iframe[src*="meet.jit.si"] body * [class*="jitsi-logo"],
+      iframe[src*="meet.jit.si"] body * [class*="jitsi-watermark"],
+      iframe[src*="meet.jit.si"] body * [class*="watermark"],
+      iframe[src*="meet.jit.si"] body * [class*="logo"],
+      iframe[src*="meet.jit.si"] body * [id*="jitsi-logo"],
+      iframe[src*="meet.jit.si"] body * [id*="jitsi-watermark"],
+      iframe[src*="meet.jit.si"] body * [id*="watermark"],
+      iframe[src*="meet.jit.si"] body * [id*="logo"],
+      iframe[src*="meet.jit.si"] body * .jitsi-logo,
+      iframe[src*="meet.jit.si"] body * .jitsi-watermark,
+      iframe[src*="meet.jit.si"] body * .watermark,
+      iframe[src*="meet.jit.si"] body * .logo,
+      iframe[src*="meet.jit.si"] body * [class*="leftwatermark"],
+      iframe[src*="meet.jit.si"] body * [class*="rightwatermark"],
+      iframe[src*="meet.jit.si"] body * [class*="topwatermark"],
+      iframe[src*="meet.jit.si"] body * [class*="bottomwatermark"],
+      iframe[src*="meet.jit.si"] body * [id*="leftwatermark"],
+      iframe[src*="meet.jit.si"] body * [id*="rightwatermark"],
+      iframe[src*="meet.jit.si"] body * [id*="topwatermark"],
+      iframe[src*="meet.jit.si"] body * [id*="bottomwatermark"] {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        height: auto !important;
+        width: auto !important;
+        overflow: visible !important;
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
       }
     }
     
