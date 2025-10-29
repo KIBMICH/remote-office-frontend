@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useParams } from "next/navigation";
-import JitsiMeet from "@/components/meeting/JitsiMeet";
+import AgoraMeet from "@/components/meeting/AgoraMeet";
 import { useAuthContext } from "@/context/AuthContext";
 
 export default function DynamicMeetingPage() {
@@ -36,7 +36,7 @@ export default function DynamicMeetingPage() {
           </p>
         </div>
         
-        <JitsiMeet
+        <AgoraMeet
           roomName={safeRoomName}
           userName={userName}
           onMeetingEnd={handleMeetingEnd}
