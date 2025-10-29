@@ -1,29 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import VideoGrid from "@/components/meeting/VideoGrid";
-import ChatPanel from "@/components/meeting/ChatPanel";
-import ControlBar from "@/components/meeting/ControlBar";
 import CreateMeetingModal from "@/components/meeting/CreateMeetingModal";
 import MeetingCard from "@/components/meeting/MeetingCard";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
-const demoParticipants = [
-  { id: "1", name: "Alice Smith" },
-  { id: "2", name: "Bob Johnson", isMuted: true },
-  { id: "3", name: "You (Screen Share)", isScreenShare: true },
-  { id: "4", name: "Charlie Brown" },
-  { id: "5", name: "Diana Ross" },
-  { id: "6", name: "Ethan Hunt" },
-  { id: "7", name: "Fiona Gale" },
-];
-
-const demoMessages = [
-  { id: "m1", author: "Alice Smith", time: "10:05 AM", text: "Good morning, everyone! Let's get started." },
-  { id: "m2", author: "Bob Johnson", time: "10:06 AM", text: "Morning! Ready to discuss the Q3 report." },
-  { id: "m3", author: "You", time: "10:07 AM", text: "Great, I'll share my screen in a moment." },
-  { id: "m4", author: "Charlie Brown", time: "10:08 AM", text: "Excited to see the progress!" },
-];
 
 interface Meeting {
   id: string;
@@ -41,7 +22,6 @@ interface Meeting {
 }
 
 export default function MeetingPage() {
-  const [viewMode, setViewMode] = useState<"meetings" | "demo">("meetings");
   const [roomName, setRoomName] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -102,22 +82,7 @@ export default function MeetingPage() {
         </div>
         
         <div className="flex items-center gap-2 sm:gap-2 flex-wrap w-full sm:w-auto">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              onClick={() => setViewMode("meetings")}
-              variant={viewMode === "meetings" ? "primary" : "outline"}
-              size="sm"
-            >
-              My Meetings
-            </Button>
-            <Button
-              onClick={() => setViewMode("demo")}
-              variant={viewMode === "demo" ? "primary" : "outline"}
-              size="sm"
-            >
-              Demo View
-            </Button>
-          </div>
+          <div className="flex flex-wrap items-center gap-2" />
           
           <Button onClick={() => setShowCreateModal(true)} variant="success" size="sm" className="shrink-0">
             Create Meeting
@@ -126,7 +91,6 @@ export default function MeetingPage() {
       </div>
 
       {/* Meetings view */}
-      {viewMode === "meetings" && (
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
@@ -170,26 +134,6 @@ export default function MeetingPage() {
             </div>
           )}
         </div>
-      )}
-
-      {/* Demo view */}
-      {viewMode === "demo" && (
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6">
-          <div className="min-w-0 order-1">
-            <VideoGrid participants={demoParticipants} />
-          </div>
-          <div className="min-w-0 order-2 hidden lg:block">
-            <ChatPanel initialMessages={demoMessages} />
-          </div>
-        </div>
-      )}
-
-      {/* Demo control bar */}
-      {viewMode === "demo" && (
-        <div className="mx-auto w-full max-w-4xl px-0 sm:px-2">
-          <ControlBar />
-        </div>
-      )}
 
       {/* Create Meeting Modal */}
       <CreateMeetingModal
