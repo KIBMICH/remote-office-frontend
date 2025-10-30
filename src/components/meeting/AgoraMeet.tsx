@@ -46,6 +46,7 @@ export default function AgoraMeet({
   const [sharing, setSharing] = useState(false);
   const [activeSpeakerUid, setActiveSpeakerUid] = useState<string | number | null>(null);
   const [shareError, setShareError] = useState("");
+  const [gridCols, setGridCols] = useState(1);
 
   const getInviteUrl = () => {
     if (typeof window === "undefined") return "";
@@ -328,6 +329,35 @@ export default function AgoraMeet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomName]);
 
+  // Responsive grid columns based on container width
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const computeCols = (width: number) => {
+      if (width < 640) return 1; // mobile
+      if (width < 1024) return 2; // tablet
+      return 3; // desktop
+    };
+    const RO = (window as any).ResizeObserver;
+    let ro: any = null;
+    if (RO) {
+      ro = new RO((entries: any[]) => {
+        for (const entry of entries) {
+          const w = (entry as any).contentRect?.width || container.clientWidth;
+          setGridCols(computeCols(w));
+        }
+      });
+      try {
+        ro.observe(container);
+      } catch {}
+    }
+    // Initial measure
+    setGridCols(computeCols(container.clientWidth));
+    return () => {
+      try { ro?.disconnect?.(); } catch {}
+    };
+  }, []);
+
   if (hasError) {
     return (
       <div className={`flex items-center justify-center min-h-[400px] bg-gray-900 rounded-xl border border-gray-800 ${className}`}>
@@ -354,14 +384,14 @@ export default function AgoraMeet({
   return (
     <div className={`relative bg-gray-900 rounded-xl border border-gray-800 overflow-hidden ${className}`} style={{ minHeight: '70vh' }}>
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/90 to-transparent p-3 flex items-center justify-between gap-2">
+      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/90 to-transparent p-3 flex flex-wrap items-center justify-between gap-2 gap-y-2">
         <div className="flex items-center gap-2">
           <div className="bg-purple-600 text-white px-2 py-1 rounded-full text-sm">{roomName}</div>
           <div className="text-white text-sm">{userName}</div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={copyInviteLink} variant="outline" size="sm">Copy Invite Link</Button>
-          <Button onClick={shareInvite} variant="outline" size="sm">Share</Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap justify-end">
+          <Button onClick={copyInviteLink} variant="outline" size="sm" className="hidden sm:inline-flex">Copy Invite Link</Button>
+          <Button onClick={shareInvite} variant="outline" size="sm" className="hidden sm:inline-flex">Share</Button>
           {isJoined ? (
             <Button onClick={leave} variant="outline" size="sm" className="text-red-400 border-red-400/50 hover:bg-red-400/10">Leave</Button>
           ) : (
@@ -381,10 +411,10 @@ export default function AgoraMeet({
       )}
 
       {/* Stage/grid */}
-      <div ref={containerRef} className="w-full h-[70vh] sm:h-[80vh] relative">
+      <div ref={containerRef} className="w-full h-[74dvh] sm:h-[80vh] relative">
         {(() => {
           const participantCount = (isJoined ? 1 : 0) + remoteUsers.length;
-          const cols = participantCount === 1 ? 1 : 3;
+          const cols = participantCount === 1 ? 1 : Math.max(1, Math.min(gridCols, 3));
           return (
             <div
               ref={gridRef}
@@ -394,7 +424,7 @@ export default function AgoraMeet({
           );
         })()}
         {/* Bottom toolbar */}
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-4 z-20 flex items-center gap-3 bg-black/60 backdrop-blur rounded-full px-4 py-3 border border-white/10">
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-4 z-20 flex flex-wrap items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur rounded-full px-3 py-2 sm:px-4 sm:py-3 border border-white/10 max-w-[calc(100%-1rem)]">
           <button onClick={toggleMic} aria-label="Toggle Mic" className={`h-10 w-10 grid place-items-center rounded-full ${micOn ? 'bg-white/10 text-white' : 'bg-red-600 text-white'}`}>
             {/* mic icon */}
             {micOn ? (
