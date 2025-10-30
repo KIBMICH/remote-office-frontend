@@ -321,10 +321,11 @@ export default function AgoraMeet({
 
   useEffect(() => {
     join();
+    const containerEl = containerRef.current;
     return () => {
       // Ensure cleanup on unmount
       leave();
-      if (containerRef.current) containerRef.current.innerHTML = "";
+      if (containerEl) containerEl.innerHTML = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomName]);
@@ -338,12 +339,12 @@ export default function AgoraMeet({
       if (width < 1024) return 2; // tablet
       return 3; // desktop
     };
-    const RO = (window as any).ResizeObserver;
-    let ro: any = null;
+    const RO: typeof ResizeObserver | undefined = (window as unknown as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver;
+    let ro: ResizeObserver | null = null;
     if (RO) {
-      ro = new RO((entries: any[]) => {
+      ro = new RO((entries: ResizeObserverEntry[]) => {
         for (const entry of entries) {
-          const w = (entry as any).contentRect?.width || container.clientWidth;
+          const w = entry.contentRect?.width || container.clientWidth;
           setGridCols(computeCols(w));
         }
       });
@@ -354,7 +355,7 @@ export default function AgoraMeet({
     // Initial measure
     setGridCols(computeCols(container.clientWidth));
     return () => {
-      try { ro?.disconnect?.(); } catch {}
+      try { ro?.disconnect(); } catch {}
     };
   }, []);
 
