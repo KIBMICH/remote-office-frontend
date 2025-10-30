@@ -425,7 +425,13 @@ export default function AgoraMeet({
           );
         })()}
         {/* Bottom toolbar */}
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-4 z-20 flex flex-wrap items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur rounded-full px-3 py-2 sm:px-4 sm:py-3 border border-white/10 max-w-[calc(100%-1rem)]">
+        <div
+          className="absolute left-1/2 -translate-x-1/2 bottom-4 z-20
+          grid grid-cols-3 gap-2
+          sm:flex sm:flex-wrap sm:items-center sm:gap-3
+          bg-black/60 backdrop-blur rounded-2xl sm:rounded-full px-2 py-2 sm:px-4 sm:py-3
+          border border-white/10 max-w-[calc(100%-1rem)] w-auto min-w-[0]"
+        >
           <button onClick={toggleMic} aria-label="Toggle Mic" className={`h-10 w-10 grid place-items-center rounded-full ${micOn ? 'bg-white/10 text-white' : 'bg-red-600 text-white'}`}>
             {/* mic icon */}
             {micOn ? (
