@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { meetingService } from "@/services/meetingService";
+import { MeetingResponse } from "@/types/meeting";
 
 interface Meeting {
   id: string;
@@ -61,25 +63,50 @@ export default function CreateMeetingModal({
     setError("");
 
     try {
-      const response = await fetch("/api/meetings/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+      // Convert datetime-local format to ISO string for backend
+      const scheduledAt = new Date(formData.scheduledAt).toISOString();
+      
+      const meetingResponse = await meetingService.createMeeting({
+        title: formData.title.trim(),
+        description: formData.description.trim() || undefined,
+        scheduledAt,
+        duration: formData.duration,
+        isPublic: formData.isPublic,
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to create meeting");
+      // Service layer now handles nested response and _id normalization
+      // But ensure we have a valid ID
+      if (!meetingResponse.id) {
+        throw new Error("Meeting created but missing ID from backend response. Check backend API.");
       }
 
-      
-      onMeetingCreated(result.meeting);
+      // Extract roomName if available, otherwise use meeting ID
+      const roomName = (meetingResponse as { roomName?: string }).roomName || meetingResponse.id;
+
+      // Convert API response to component Meeting format
+      const meeting: Meeting = {
+        id: meetingResponse.id,
+        title: meetingResponse.title,
+        description: meetingResponse.description || "",
+        scheduledAt: meetingResponse.scheduledAt,
+        duration: meetingResponse.duration,
+        isPublic: meetingResponse.isPublic,
+        status: meetingResponse.status,
+        roomName: roomName,
+        participants: meetingResponse.participants?.map(p => ({
+          id: p.userId,
+          name: p.user.name,
+          email: p.user.email,
+        })) || [],
+        maxParticipants: meetingResponse.maxParticipants || 50,
+        createdAt: meetingResponse.createdAt,
+        createdBy: meetingResponse.createdBy,
+      };
+
+      onMeetingCreated(meeting);
       onClose();
-      
- 
+
+      // Reset form
       setFormData({
         title: "",
         description: "",
@@ -90,7 +117,8 @@ export default function CreateMeetingModal({
 
     } catch (error) {
       console.error("Error creating meeting:", error);
-      setError(error instanceof Error ? error.message : "Failed to create meeting");
+      const errorMessage = error instanceof Error ? error.message : "Failed to create meeting";
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

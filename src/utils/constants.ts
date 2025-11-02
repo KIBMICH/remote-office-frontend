@@ -67,6 +67,30 @@ export const API_ENDPOINTS = {
     GET_CHANNEL_USERS: "chat/channels/:channelId/users",
     UPLOAD_FILE: "chat/upload",
   },
+  MEETINGS: {
+    STATS: "meetings/stats",
+    LIST: "meetings",
+    GET: "meetings/:meetingId",
+    CREATE: "meetings",
+    UPDATE: "meetings/:meetingId",
+    DELETE: "meetings/:meetingId",
+    START: "meetings/:meetingId/start",
+    END: "meetings/:meetingId/end",
+    PARTICIPANTS: "meetings/:meetingId/participants",
+    ADD_PARTICIPANTS: "meetings/:meetingId/participants",
+    REMOVE_PARTICIPANT: "meetings/:meetingId/participants/:userId",
+    UPDATE_PARTICIPANT_ROLE: "meetings/:meetingId/participants/:userId",
+    JOIN: "meetings/:meetingId/join",
+    LEAVE: "meetings/:meetingId/leave",
+    RESPOND: "meetings/:meetingId/respond",
+    SUMMARY: "meetings/:meetingId/summary",
+    REGENERATE_SUMMARY: "meetings/:meetingId/summary",
+  },
+  AGORA: {
+    RTC_TOKEN: "agora/token",
+    RTM_TOKEN: "agora/rtm-token",
+    VALIDATE_ROOM: "agora/validate/:roomName",
+  },
 } as const;
 
 // App Configuration

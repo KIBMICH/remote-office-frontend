@@ -23,13 +23,15 @@ interface MeetingCardProps {
   onJoin: (meeting: Meeting) => void;
   onEdit?: (meeting: Meeting) => void;
   onDelete?: (meeting: Meeting) => void;
+  isDeleting?: boolean;
 }
 
 export default function MeetingCard({ 
   meeting, 
   onJoin, 
   onEdit, 
-  onDelete 
+  onDelete,
+  isDeleting = false
 }: MeetingCardProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -181,8 +183,9 @@ export default function MeetingCard({
             variant="outline"
             size="sm"
             className="text-red-400 border-red-400/50 hover:bg-red-400/10"
+            disabled={isDeleting}
           >
-            Delete
+            {isDeleting ? "Deleting..." : "Delete"}
           </Button>
         )}
       </div>

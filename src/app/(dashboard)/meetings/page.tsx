@@ -4,6 +4,10 @@ import CreateMeetingModal from "@/components/meeting/CreateMeetingModal";
 import MeetingCard from "@/components/meeting/MeetingCard";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { meetingService } from "@/services/meetingService";
+import { MeetingResponse } from "@/types/meeting";
+import { useToast } from "@/components/ui/ToastProvider";
+import { useAuthContext } from "@/context/AuthContext";
 
 
 interface Meeting {
@@ -22,11 +26,14 @@ interface Meeting {
 }
 
 export default function MeetingPage() {
+  const { success, error: toastError } = useToast();
+  const { user } = useAuthContext();
   const [roomName, setRoomName] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingMeetingId, setDeletingMeetingId] = useState<string | null>(null);
 
   // Load meetings on component mount
   useEffect(() => {
@@ -36,14 +43,51 @@ export default function MeetingPage() {
   const fetchMeetings = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/meetings/list");
-      const result = await response.json();
+      setError("");
+      
+      const response = await meetingService.getMeetings({
+        page: 1,
+        limit: 100,
+        sortBy: "scheduledAt",
+        sortOrder: "asc",
+      });
 
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to fetch meetings");
-      }
+      // Debug: Log the response to see what backend returns
+      console.log("Meetings response from backend:", response);
+      console.log("Meetings array:", response.meetings);
 
-      setMeetings(result.meetings || []);
+      // Convert API response to component Meeting format
+      const meetingsList: Meeting[] = response.meetings
+        .map((m: MeetingResponse) => {
+          // Ensure meeting has an ID - check both id and _id fields (backend might use either)
+          const meetingId = m.id || (m as { _id?: string })._id;
+          if (!meetingId) {
+            console.warn("Meeting missing ID:", m);
+            return null; // Skip meetings without IDs
+          }
+
+          return {
+            id: meetingId,
+            title: m.title,
+            description: m.description || "",
+            scheduledAt: m.scheduledAt,
+            duration: m.duration,
+            isPublic: m.isPublic,
+            status: m.status,
+            roomName: meetingId, // Use meeting ID as roomName
+            participants: m.participants?.map(p => ({
+              id: p.userId,
+              name: p.user.name,
+              email: p.user.email,
+            })) || [],
+            maxParticipants: m.maxParticipants || 50,
+            createdAt: m.createdAt,
+            createdBy: m.createdBy,
+          };
+        })
+        .filter((m): m is Meeting => m !== null); // Filter out null values
+
+      setMeetings(meetingsList);
     } catch (error) {
       console.error("Error fetching meetings:", error);
       setError(error instanceof Error ? error.message : "Failed to load meetings");
@@ -63,6 +107,7 @@ export default function MeetingPage() {
 
   const handleMeetingCreated = (newMeeting: Meeting) => {
     setMeetings(prev => [newMeeting, ...prev]);
+    success("Meeting created successfully");
     // Optionally join the meeting immediately
     // window.location.href = `/meeting/${encodeURIComponent(newMeeting.roomName)}`;
   };
@@ -70,6 +115,34 @@ export default function MeetingPage() {
   const handleCreateQuickMeeting = () => {
     const newRoomName = `meeting-${Date.now()}`;
     window.location.href = `/meeting/${encodeURIComponent(newRoomName)}`;
+  };
+
+  const handleDeleteMeeting = async (meeting: Meeting) => {
+    // Confirmation dialog
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete "${meeting.title}"?\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      setDeletingMeetingId(meeting.id);
+      
+      await meetingService.deleteMeeting(meeting.id);
+      
+      // Remove meeting from list
+      setMeetings(prev => prev.filter(m => m.id !== meeting.id));
+      
+      success("Meeting deleted successfully");
+    } catch (error) {
+      console.error("Error deleting meeting:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete meeting";
+      toastError(errorMessage);
+    } finally {
+      setDeletingMeetingId(null);
+    }
   };
 
   return (
@@ -124,13 +197,20 @@ export default function MeetingPage() {
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {meetings.map((meeting) => (
-                <MeetingCard
-                  key={meeting.id}
-                  meeting={meeting}
-                  onJoin={handleJoinMeetingFromCard}
-                />
-              ))}
+              {meetings.map((meeting) => {
+                // Only show delete button to the meeting creator
+                const canDelete = user?.id && meeting.createdBy === user.id;
+                
+                return (
+                  <MeetingCard
+                    key={meeting.id || `meeting-${meeting.createdAt}`}
+                    meeting={meeting}
+                    onJoin={handleJoinMeetingFromCard}
+                    onDelete={canDelete ? handleDeleteMeeting : undefined}
+                    isDeleting={deletingMeetingId === meeting.id}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
