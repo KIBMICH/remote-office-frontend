@@ -387,7 +387,7 @@ export default function AgoraMeet({
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/90 to-transparent p-3 flex flex-wrap items-center justify-between gap-2 gap-y-2">
         <div className="flex items-center gap-2">
-          <div className="bg-purple-600 text-white px-2 py-1 rounded-full text-sm">{roomName}</div>
+
           <div className="text-white text-sm">{userName}</div>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap justify-end">
