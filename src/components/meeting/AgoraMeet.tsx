@@ -34,6 +34,7 @@ export default function AgoraMeet({
   const gridRef = useRef<HTMLDivElement | null>(null);
   const localTileRef = useRef<HTMLDivElement | null>(null);
   const screenTrackRef = useRef<ILocalTrack | null>(null);
+  const joiningRef = useRef(false); // Prevent multiple simultaneous joins
   const [isJoined, setIsJoined] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -92,9 +93,16 @@ export default function AgoraMeet({
         return { appId: resolvedAppId, token: data?.token ?? null };
       }
     } catch {}
-    // Fallback to tokenless join (only works if Agora project allows it)
+    
     return { appId: resolvedAppId, token: null };
   }, [appId, token, roomName]);
+
+  const clearGrid = () => {
+    if (gridRef.current) {
+      gridRef.current.innerHTML = "";
+    }
+    localTileRef.current = null;
+  };
 
   const mountRemote = (user: RemoteUser) => {
     if (!gridRef.current) return;
@@ -118,6 +126,11 @@ export default function AgoraMeet({
 
   const mountLocal = () => {
     if (!gridRef.current) return null;
+
+    const existing = gridRef.current.querySelector(`#local-self`);
+    if (existing && existing !== localTileRef.current) {
+      existing.remove();
+    }
     if (!localTileRef.current) {
       const el = document.createElement("div");
       el.id = "local-self";
@@ -135,11 +148,60 @@ export default function AgoraMeet({
     return localTileRef.current;
   };
 
-  const join = useCallback(async () => {
+  const leave = useCallback(async (silent = false) => {
     try {
+      const client = clientRef.current;
+      localAudioRef.current?.close();
+      localVideoRef.current?.close();
+      screenTrackRef.current?.close();
+      localAudioRef.current = null;
+      localVideoRef.current = null;
+      screenTrackRef.current = null;
+      
+      
+      if (gridRef.current) {
+        gridRef.current.innerHTML = "";
+      }
+      localTileRef.current = null;
+
+      if (client) {
+        await client.unpublish();
+        await client.leave();
+        client.removeAllListeners();
+        clientRef.current = null;
+      }
+      
+      // Clear remote users
+      setRemoteUsers([]);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("Error during leave:", e);
+    } finally {
+      if (!silent) {
+        setIsJoined(false);
+        onMeetingEnd?.(roomName);
+      }
+    }
+  }, [onMeetingEnd, roomName]);
+
+  const join = useCallback(async () => {
+    // Prevent multiple simultaneous joins
+    if (joiningRef.current || isJoined) {
+      return;
+    }
+    
+    try {
+      joiningRef.current = true;
       setIsLoading(true);
       setHasError(false);
       setErrorMessage("");
+      
+      // Clean up any existing connection and tracks before joining
+      await leave(true); // Pass true to skip state updates during cleanup
+      
+      // Clear grid to prevent duplicate video elements
+      clearGrid();
+      
       const AgoraRTC = await importAgora();
       const { appId: useAppId, token: useToken } = await getCreds();
 
@@ -213,9 +275,11 @@ export default function AgoraMeet({
 
       setIsJoined(true);
       setIsLoading(false);
+      joiningRef.current = false;
     } catch (e) {
       setHasError(true);
       setIsLoading(false);
+      joiningRef.current = false;
       const msg = (e as Error)?.message || "Unknown error";
       setErrorMessage(msg);
       // Also surface to console for debugging
@@ -223,33 +287,7 @@ export default function AgoraMeet({
       console.error("Agora join error:", e);
       onError?.(e as Error);
     }
-  }, [getCreds, importAgora, onError, roomName]);
-
-  const leave = useCallback(async () => {
-    try {
-      const client = clientRef.current;
-      localAudioRef.current?.close();
-      localVideoRef.current?.close();
-      screenTrackRef.current?.close();
-      localAudioRef.current = null;
-      localVideoRef.current = null;
-      screenTrackRef.current = null;
-      if (localTileRef.current) {
-        localTileRef.current.remove();
-        localTileRef.current = null;
-      }
-
-      if (client) {
-        await client.unpublish();
-        await client.leave();
-        client.removeAllListeners();
-        clientRef.current = null;
-      }
-    } finally {
-      setIsJoined(false);
-      onMeetingEnd?.(roomName);
-    }
-  }, [onMeetingEnd, roomName]);
+  }, [getCreds, importAgora, onError, roomName, isJoined, leave, clearGrid]);
 
   const toggleMic = async () => {
     const track = localAudioRef.current;
@@ -320,7 +358,17 @@ export default function AgoraMeet({
   }, [importAgora, sharing]);
 
   useEffect(() => {
-    join();
+    // Auto-join only on desktop; on mobile, wait for user to click Join button
+    // This prevents permission issues and multiple video feeds on mobile
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                     (typeof window !== "undefined" && window.innerWidth < 768);
+    
+    if (!isMobile) {
+      join();
+    } else {
+      setIsLoading(false);
+    }
+    
     const containerEl = containerRef.current;
     return () => {
       // Ensure cleanup on unmount
@@ -394,15 +442,22 @@ export default function AgoraMeet({
           <Button onClick={copyInviteLink} variant="outline" size="sm" className="hidden sm:inline-flex">Copy Invite Link</Button>
           <Button onClick={shareInvite} variant="outline" size="sm" className="hidden sm:inline-flex">Share</Button>
           {isJoined ? (
-            <Button onClick={leave} variant="outline" size="sm" className="text-red-400 border-red-400/50 hover:bg-red-400/10">Leave</Button>
+            <Button onClick={() => { leave().catch(() => {}); }} variant="outline" size="sm" className="text-red-400 border-red-400/50 hover:bg-red-400/10">Leave</Button>
           ) : (
-            <Button onClick={join} variant="primary" size="sm">Join</Button>
+            <Button 
+              onClick={join} 
+              variant="primary" 
+              size="sm"
+              disabled={isLoading || joiningRef.current}
+            >
+              {isLoading ? "Joining..." : "Join"}
+            </Button>
           )}
         </div>
       </div>
 
       {isLoading && (
-        <div className="absolute inset-0 bg-gray-900 items-center justify-center z-20 px-4 hidden sm:flex">
+        <div className="absolute inset-0 bg-gray-900 items-center justify-center z-20 px-4 flex">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" />
             <p className="text-white">Joining meeting...</p>
@@ -460,7 +515,7 @@ export default function AgoraMeet({
             {/* chat icon */}
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><path d="M2 4h20v12H6l-4 4V4Z"/></svg>
           </button>
-          <button onClick={leave} aria-label="Leave" className="h-10 w-10 grid place-items-center rounded-full bg-red-600 text-white">
+          <button onClick={() => { leave().catch(() => {}); }} aria-label="Leave" className="h-10 w-10 grid place-items-center rounded-full bg-red-600 text-white">
             {/* leave icon */}
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><path d="M10 3h4v4h-4V3Zm-7 7h18v4H3v-4Zm7 7h4v4h-4v-4Z"/></svg>
           </button>
