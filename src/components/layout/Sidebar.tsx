@@ -76,13 +76,13 @@ export default function Sidebar({ showHeader = true, onClose }: SidebarProps) {
       </nav>
       
       <div className="mt-auto p-4 space-y-3 border-t border-gray-800">
-        <button onClick={() => { onClose?.(); }} className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm">
+        <button onClick={() => { onClose?.(); }} className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm cursor-pointer">
           <PlusIcon className="w-4 h-4" />
           <span>Create New Task</span>
         </button>
-        <button onClick={() => { onClose?.(); router.push('/meeting'); }} className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">
+        <button onClick={() => { onClose?.(); router.push('/meetings'); }} className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm cursor-pointer">
           <PlayIcon className="w-4 h-4" />
-          <span>Start Meeting</span>
+          <span>Join a Meeting</span>
         </button>
         <div className="flex items-center space-x-3 pt-6">
           <div className="h-8 w-8 rounded-full bg-gray-600 overflow-hidden">

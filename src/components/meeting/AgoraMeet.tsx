@@ -171,10 +171,10 @@ export default function AgoraMeet({
         clientRef.current = null;
       }
       
-      // Clear remote users
+    
       setRemoteUsers([]);
     } catch (e) {
-      // eslint-disable-next-line no-console
+     
       console.error("Error during leave:", e);
     } finally {
       if (!silent) {
@@ -196,10 +196,10 @@ export default function AgoraMeet({
       setHasError(false);
       setErrorMessage("");
       
-      // Clean up any existing connection and tracks before joining
-      await leave(true); // Pass true to skip state updates during cleanup
+     
+      await leave(true); 
       
-      // Clear grid to prevent duplicate video elements
+     
       clearGrid();
       
       const AgoraRTC = await importAgora();
@@ -208,7 +208,7 @@ export default function AgoraMeet({
       const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
       clientRef.current = client;
 
-      // Track remote users
+      
       client.on("user-published", async (user: RemoteUser, mediaType: "audio" | "video" | "datachannel") => {
         if (mediaType === "video" || mediaType === "audio") {
           await client.subscribe(user, mediaType);
@@ -231,7 +231,7 @@ export default function AgoraMeet({
         setRemoteUsers(Array.from(client.remoteUsers));
       });
 
-      // Active speaker detection
+     
       client.enableAudioVolumeIndicator?.();
       type VolumeIndicator = { uid: string | number; level: number };
       client.on("volume-indicator", (volumes: VolumeIndicator[]) => {
@@ -253,8 +253,6 @@ export default function AgoraMeet({
       // Join channel
       const uid = await client.join(useAppId, roomName, useToken || null, null);
 
-      // Create local tracks
-      // Preflight permission request for clearer UX
       try {
         const preflight = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         preflight.getTracks().forEach(t => t.stop());
@@ -282,8 +280,7 @@ export default function AgoraMeet({
       joiningRef.current = false;
       const msg = (e as Error)?.message || "Unknown error";
       setErrorMessage(msg);
-      // Also surface to console for debugging
-      // eslint-disable-next-line no-console
+     
       console.error("Agora join error:", e);
       onError?.(e as Error);
     }
