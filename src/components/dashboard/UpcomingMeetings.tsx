@@ -60,27 +60,17 @@ export default function UpcomingMeetings() {
         sortOrder: "asc",
       });
 
-      // Debug: Log response to see structure
-      console.log("UpcomingMeetings: Full response:", response);
-      console.log("UpcomingMeetings: Response type:", typeof response);
-      console.log("UpcomingMeetings: Is array?", Array.isArray(response));
-      console.log("UpcomingMeetings: Meetings property:", response.meetings);
-      console.log("UpcomingMeetings: Meetings array length:", response.meetings?.length);
-
-      // Handle different response structures:
-      // 1. Direct array: response is MeetingResponse[]
-      // 2. Paginated: response.meetings is MeetingResponse[]
-      // 3. Nested: response.data.meetings is MeetingResponse[]
+    
       let meetingsArray: MeetingResponse[] = [];
       
       if (Array.isArray(response)) {
-        // Response is directly an array
+     
         meetingsArray = response;
       } else if (response.meetings && Array.isArray(response.meetings)) {
-        // Standard paginated response
+      
         meetingsArray = response.meetings;
       } else {
-        // Try nested response structure
+       
         const nestedResponse = response as unknown as { data?: { meetings?: MeetingResponse[] } };
         if (nestedResponse.data?.meetings && Array.isArray(nestedResponse.data.meetings)) {
           meetingsArray = nestedResponse.data.meetings;

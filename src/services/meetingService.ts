@@ -64,10 +64,11 @@ export const createMeeting = async (
   let meetingData = (rawData as { meeting?: MeetingResponse }).meeting || rawData as MeetingResponse;
   
   // Normalize _id to id if backend returns MongoDB format
-  if ((meetingData as { _id?: string })._id && !meetingData.id) {
+  const meetingDataWithId = meetingData as unknown as { _id?: string; id?: string };
+  if (meetingDataWithId._id && !meetingData.id) {
     meetingData = {
       ...meetingData,
-      id: (meetingData as { _id: string })._id,
+      id: meetingDataWithId._id,
     } as MeetingResponse;
   }
   

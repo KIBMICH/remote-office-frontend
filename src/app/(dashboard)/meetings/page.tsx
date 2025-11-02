@@ -58,13 +58,18 @@ export default function MeetingPage() {
 
       // Convert API response to component Meeting format
       const meetingsList: Meeting[] = response.meetings
-        .map((m: MeetingResponse) => {
-          // Ensure meeting has an ID - check both id and _id fields (backend might use either)
+        .filter((m: MeetingResponse) => {
+          // Filter out meetings without IDs first
           const meetingId = m.id || (m as { _id?: string })._id;
           if (!meetingId) {
             console.warn("Meeting missing ID:", m);
-            return null; // Skip meetings without IDs
+            return false;
           }
+          return true;
+        })
+        .map((m: MeetingResponse) => {
+          // Ensure meeting has an ID - check both id and _id fields (backend might use either)
+          const meetingId = m.id || (m as { _id?: string })._id || "";
 
           return {
             id: meetingId,
@@ -84,8 +89,7 @@ export default function MeetingPage() {
             createdAt: m.createdAt,
             createdBy: m.createdBy,
           };
-        })
-        .filter((m): m is Meeting => m !== null); // Filter out null values
+        });
 
       setMeetings(meetingsList);
     } catch (error) {
