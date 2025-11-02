@@ -171,10 +171,10 @@ export default function AgoraMeet({
         clientRef.current = null;
       }
       
-      // Clear remote users
+    
       setRemoteUsers([]);
     } catch (e) {
-      // eslint-disable-next-line no-console
+     
       console.error("Error during leave:", e);
     } finally {
       if (!silent) {
@@ -196,10 +196,10 @@ export default function AgoraMeet({
       setHasError(false);
       setErrorMessage("");
       
-      // Clean up any existing connection and tracks before joining
-      await leave(true); // Pass true to skip state updates during cleanup
+     
+      await leave(true); 
       
-      // Clear grid to prevent duplicate video elements
+     
       clearGrid();
       
       const AgoraRTC = await importAgora();
@@ -208,7 +208,7 @@ export default function AgoraMeet({
       const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
       clientRef.current = client;
 
-      // Track remote users
+      
       client.on("user-published", async (user: RemoteUser, mediaType: "audio" | "video" | "datachannel") => {
         if (mediaType === "video" || mediaType === "audio") {
           await client.subscribe(user, mediaType);
@@ -231,7 +231,7 @@ export default function AgoraMeet({
         setRemoteUsers(Array.from(client.remoteUsers));
       });
 
-      // Active speaker detection
+     
       client.enableAudioVolumeIndicator?.();
       type VolumeIndicator = { uid: string | number; level: number };
       client.on("volume-indicator", (volumes: VolumeIndicator[]) => {
@@ -253,8 +253,6 @@ export default function AgoraMeet({
       // Join channel
       const uid = await client.join(useAppId, roomName, useToken || null, null);
 
-      // Create local tracks
-      // Preflight permission request for clearer UX
       try {
         const preflight = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         preflight.getTracks().forEach(t => t.stop());
@@ -282,8 +280,7 @@ export default function AgoraMeet({
       joiningRef.current = false;
       const msg = (e as Error)?.message || "Unknown error";
       setErrorMessage(msg);
-      // Also surface to console for debugging
-      // eslint-disable-next-line no-console
+     
       console.error("Agora join error:", e);
       onError?.(e as Error);
     }
@@ -433,22 +430,22 @@ export default function AgoraMeet({
   return (
     <div className={`relative bg-gray-900 rounded-xl border border-gray-800 overflow-hidden ${className}`} style={{ minHeight: '70vh' }}>
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/90 to-transparent p-3 flex flex-wrap items-center justify-between gap-2 gap-y-2">
-        <div className="flex items-center gap-2">
-
-          <div className="text-white text-sm">{userName}</div>
+      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/90 to-transparent p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-white text-sm truncate">{userName}</div>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap justify-end">
+        <div className="flex items-center gap-2 justify-end flex-wrap">
           <Button onClick={copyInviteLink} variant="outline" size="sm" className="hidden sm:inline-flex">Copy Invite Link</Button>
           <Button onClick={shareInvite} variant="outline" size="sm" className="hidden sm:inline-flex">Share</Button>
           {isJoined ? (
-            <Button onClick={() => { leave().catch(() => {}); }} variant="outline" size="sm" className="text-red-400 border-red-400/50 hover:bg-red-400/10">Leave</Button>
+            <Button onClick={() => { leave().catch(() => {}); }} variant="outline" size="sm" className="text-red-400 border-red-400/50 hover:bg-red-400/10 whitespace-nowrap">Leave</Button>
           ) : (
             <Button 
               onClick={join} 
               variant="primary" 
               size="sm"
               disabled={isLoading || joiningRef.current}
+              className="whitespace-nowrap"
             >
               {isLoading ? "Joining..." : "Join"}
             </Button>

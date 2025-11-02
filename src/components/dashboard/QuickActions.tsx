@@ -1,4 +1,5 @@
 import React from "react";
+import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 
 interface QuickActionsProps {
@@ -6,6 +7,8 @@ interface QuickActionsProps {
 }
 
 export default function QuickActions({ onCreateTask }: QuickActionsProps) {
+  const router = useRouter();
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <Button 
@@ -15,9 +18,13 @@ export default function QuickActions({ onCreateTask }: QuickActionsProps) {
         <PlusIcon className="w-5 h-5" />
         Create New Task
       </Button>
-      <Button variant="secondary" className="justify-center gap-3 !bg-blue-600 hover:!bg-blue-700 !text-white">
+      <Button 
+        variant="secondary" 
+        className="justify-center gap-3 !bg-blue-600 hover:!bg-blue-700 !text-white"
+        onClick={() => router.push('/meetings')}
+      >
         <PlayIcon className="w-5 h-5" />
-        Start New Meeting
+        Join a Meeting
       </Button>
       <Button variant="secondary" className="justify-center gap-3 bg-gray-800 text-white hover:bg-gray-700">
         <UsersIcon className="w-5 h-5 text-white" />
